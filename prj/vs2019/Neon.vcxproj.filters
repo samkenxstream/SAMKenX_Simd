@@ -289,6 +289,9 @@
     <ClCompile Include="..\..\src\Simd\SimdNeonSynetPermute.cpp">
       <Filter>Neon</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Simd\SimdNeonSynetAdd.cpp">
+      <Filter>Neon</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Neon">
@@ -489,6 +492,9 @@
       <Filter>Inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Simd\SimdTransform.h">
+      <Filter>Inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Simd\SimdReorder.h">
       <Filter>Inc</Filter>
     </ClInclude>
   </ItemGroup>
