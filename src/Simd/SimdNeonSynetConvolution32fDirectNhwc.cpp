@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include "Simd/SimdNeon.h"
 #include "Simd/SimdGemm.h"
 #include "Simd/SimdExp.h"
+#include "Simd/SimdErf.h"
 
 namespace Simd
 {
@@ -108,6 +109,11 @@ namespace Simd
         template<> SIMD_INLINE float32x4_t Activate<::SimdConvolutionActivationSwish>(float32x4_t value, const float* params, size_t offset)
         {
             return Neon::Swish<1>(value, vld1q_dup_f32(params + 0));
+        }
+
+        template<> SIMD_INLINE float32x4_t Activate<::SimdConvolutionActivationGelu>(float32x4_t value, const float* params, size_t offset)
+        {
+            return Neon::Gelu<1>(value);
         }
 
         SIMD_INLINE void KernelHwcDefaultEdge(const float * src, const ConvParam32f & p, size_t kH, size_t kW, const float * weight, float32x4_t & sum)
@@ -1012,6 +1018,7 @@ namespace Simd
                 case ::SimdConvolutionActivationMish: func = GetConvolutionBiasActivation<::SimdConvolutionActivationMish>(p); break;
                 case ::SimdConvolutionActivationHardSigmoid: func = GetConvolutionBiasActivation<::SimdConvolutionActivationHardSigmoid>(p); break;
                 case ::SimdConvolutionActivationSwish: func = GetConvolutionBiasActivation<::SimdConvolutionActivationSwish>(p); break;
+                case ::SimdConvolutionActivationGelu: func = GetConvolutionBiasActivation<::SimdConvolutionActivationGelu>(p); break;
                 }
             }
             return func ? func : Base::SynetConvolution32fDirectNhwc::SetConvolutionBiasActivation();

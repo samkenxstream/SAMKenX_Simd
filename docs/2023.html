@@ -33,8 +33,65 @@
 </center>
 
 <hr/>
-<h3 id="R124">April X, 2023 (version X.X.124)</h3>
+<h3 id="R125">May X, 2023 (version X.X.125)</h3>
 <h4>Algorithms</h4>
+<h5>New features</h5>
+<ul>
+ <li>AVX-512BW, NEON optimizations of function SynetGelu32f.</li>
+ <li>SimdConvolutionActivationGelu member in enumeration SimdConvolutionActivationType.</li>
+ <li>Support of SynetUnaryOperation32fErf in NEON optimizations of function SynetUnaryOperation32f.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fGemmNN.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fWinograd.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fGemmNT.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fDirectNchw.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fDirectNhwc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fDepthwiseDotProduct.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetConvolution32fNhwcDirect.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512BF16, AMX-BF16 optimizations of class SynetConvolution32fBf16Gemm.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512BF16, AMX-BF16 optimizations of class SynetConvolution32fBf16Nhwc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetDeconvolution32fGemmNN.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of class SynetDeconvolution32fNhwcDirect2x2.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8, NEON optimizations of class SynetConvolution8iGemmNN.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8, NEON optimizations of class SynetConvolution8iNhwcDirect.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8, NEON optimizations of class SynetConvolution8iNhwcDepthwise.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX, AVX2, AVX-512BW, NEON optimizations of class SynetMergedConvolution32fCd.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX, AVX2, AVX-512BW, NEON optimizations of class SynetMergedConvolution32fCdc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX, AVX2, AVX-512BW, NEON optimizations of class SynetMergedConvolution32fDc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512BF16, AMX-BF16 optimizations of class SynetMergedConvolution32fBf16Cd.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512BF16, AMX-BF16 optimizations of class SynetMergedConvolution32fBf16Cdc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512BF16, AMX-BF16 optimizations of class SynetMergedConvolution32fBf16Dc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iCd.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iCdc.</li>
+ <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iDc.</li>
+</ul>
+<h5>Improving</h5>
+<ul>
+ <li>SSE4.1, AVX2, AVX-512BW, NEON optimizations of function Erf.</li>
+</ul>
+
+<a href="#HOME">Home</a>
+<hr/>
+<h3 id="R124">April 3, 2023 (version 5.2.124)</h3>
+<h4>Algorithms</h4>
+<h5>New features</h5>
+<ul>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of function BgraToYuv422pV2.</li>
+ <li>NEON optimizations of function BgraToYuv444pV2.</li>
+ <li>NEON optimizations of function BgraToYuv420pV2.</li>
+ <li>NEON optimizations of function Float32ToBFloat16.</li>
+ <li>NEON optimizations of function BFloat16ToFloat32.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of function BgraToYuva420pV2.</li>
+ <li>Support of SynetUnaryOperation32fErf in Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function SynetUnaryOperation32f.</li>
+ <li>Base implementation, SSE4.1, AVX2 optimizations of function SynetGelu32f.</li>
+</ul>
+<h5>Improving</h5>
+<ul>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function SynetSoftmaxLayerForward.</li>
+</ul>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Error in method View::ToOcv.</li>
+</ul>
 <h5>Removing</h5>
 <ul>
  <li>Support of all formats besides NHWC and NCHW for function SynetAddBias.</li>
@@ -50,12 +107,27 @@
  <li>Support of all formats besides NHWC and NCHW for function SynetFusedLayerForward9.</li>
  <li>Function SynetReorderFilter.</li>
  <li>Function SynetReorderImage.</li>
+ <li>Function SynetTensorAlignment.</li>
+ <li>Function SynetSpecifyTensorFormat.</li>
+ <li>Support of all formats besides NHWC and NCHW for enumeration SimdTensorFormatType.</li>
+</ul>
+<h5>Renaming</h5>
+<ul>
+ <li>Function from SynetUnaryOperation32fLayerForward to SynetUnaryOperation32f.</li>
 </ul>
  
 <h4>Test framework</h4>
 <h5>New features</h5>
 <ul>
  <li>Test command line argument '-ts' to print statistics of time of tests execution.</li>
+ <li>Tests for verifying functionality of function BgraToYuv422pV2.</li>
+ <li>Tests for verifying functionality of function BgraToYuva420pV2.</li>
+ <li>Improving header of performance report.</li>
+ <li>Tests for verifying functionality of function SynetGelu32f.</li>
+</ul>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Error in test SynetUnaryOperation32fLayerForward.</li>
 </ul>
 
 <a href="#HOME">Home</a>

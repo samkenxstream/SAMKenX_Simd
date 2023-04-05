@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -447,6 +447,7 @@ namespace Simd
 			case SimdConvolutionActivationMish: Dc::Set<SimdConvolutionActivationMish>(p, t, i, c); break;
 			case SimdConvolutionActivationHardSigmoid: Dc::Set<SimdConvolutionActivationHardSigmoid>(p, t, i, c); break;
 			case SimdConvolutionActivationSwish: Dc::Set<SimdConvolutionActivationSwish>(p, t, i, c); break;
+			case SimdConvolutionActivationGelu: Dc::Set<SimdConvolutionActivationGelu>(p, t, i, c); break;
 			default: assert(0);
 			}
 		}

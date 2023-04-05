@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -1480,7 +1480,8 @@ namespace Simd
 			for (size_t i = 0; i < count; ++i)
 				if (convs[i].activation == SimdConvolutionActivationElu ||
 					convs[i].activation == SimdConvolutionActivationMish ||
-					convs[i].activation == SimdConvolutionActivationSwish)
+					convs[i].activation == SimdConvolutionActivationSwish ||
+					convs[i].activation == SimdConvolutionActivationGelu)
 					return Sse41::SynetMergedConvolution32fInit(batch, convs, count, add, compatibility);
 			MergConvParam32f param(batch, convs, count, add, compatibility);
 			if (!param.Valid())

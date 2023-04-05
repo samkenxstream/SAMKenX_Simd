@@ -122,6 +122,9 @@ namespace Simd
 
         void BgraToYuv422p(const uint8_t* bgra, size_t width, size_t height, size_t bgraStride, uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride);
 
+        void BgraToYuv422pV2(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height,
+            uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride, SimdYuvType yuvType);
+
         void BgraToYuv444p(const uint8_t* bgra, size_t width, size_t height, size_t bgraStride, uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride);
 
         void BgraToYuv444pV2(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height,
@@ -129,6 +132,9 @@ namespace Simd
 
         void BgraToYuva420p(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height,
             uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride, uint8_t* a, size_t aStride);
+
+        void BgraToYuva420pV2(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height,
+            uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride, uint8_t* a, size_t aStride, SimdYuvType yuvType);
 
         void Bgr48pToBgra32(const uint8_t* blue, size_t blueStride, size_t width, size_t height,
             const uint8_t* green, size_t greenStride, const uint8_t* red, size_t redStride, uint8_t* bgra, size_t bgraStride, uint8_t alpha);
@@ -511,7 +517,7 @@ namespace Simd
 
         void SynetSoftmaxLayerForward(const float* src, size_t outer, size_t size, size_t inner, float* dst);
 
-        void SynetUnaryOperation32fLayerForward(const float* src, size_t size, SimdSynetUnaryOperation32fType type, float* dst);
+        void SynetUnaryOperation32f(const float* src, size_t size, SimdSynetUnaryOperation32fType type, float* dst);
 
         void SynetElu32f(const float* src, size_t size, const float* alpha, float* dst);
 
@@ -556,6 +562,8 @@ namespace Simd
         void SynetFusedLayerForward8(const float* src0, const float* src1, const float* src2, size_t channels, size_t spatial, float* dst, SimdTensorFormatType format);
 
         void SynetFusedLayerForward9(const float* src0, const float* src1, const float* scale, const float* bias, size_t channels0, size_t channels1, size_t spatial, float* dst0, float* dst1, SimdTensorFormatType format);
+
+        void SynetGelu32f(const float* src, size_t size, float* dst);
 
         void SynetInnerProduct8i(size_t M, size_t N, size_t K, const uint8_t* src, const int8_t* weight, int32_t* dst, SimdSynetCompatibilityType compatibility);
 

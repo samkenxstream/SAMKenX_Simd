@@ -28,6 +28,7 @@
 #include "Simd/SimdStore.h"
 #include "Simd/SimdSynet.h"
 #include "Simd/SimdExp.h"
+#include "Simd/SimdErf.h"
 
 namespace Simd
 {
@@ -90,6 +91,11 @@ namespace Simd
         template<> SIMD_INLINE float Activate<SimdConvolutionActivationSwish>(float value, const float* params, size_t offset)
         {
             return SynetSwish32f(value, params[0]);
+        }
+
+        template<> SIMD_INLINE float Activate<SimdConvolutionActivationGelu>(float value, const float* params, size_t offset)
+        {
+            return Gelu(value);
         }
 
         template<SimdConvolutionActivationType type> void DepthwiseConvolution(const float* src, const SimdConvolutionParameters& p,
@@ -185,6 +191,11 @@ namespace Simd
             return Swish(value, _mm_set1_ps(params[0]));
         }
 
+        template<> SIMD_INLINE __m128 Activate<::SimdConvolutionActivationGelu>(__m128 value, const float* params, size_t offset)
+        {
+            return Gelu(value);
+        }
+
         //---------------------------------------------------------------------
 
         template<::SimdConvolutionActivationType type> SIMD_INLINE __m128 Activate(__m128 value, const __m128 * params, size_t index);
@@ -237,6 +248,11 @@ namespace Simd
         template<> SIMD_INLINE __m128 Activate<::SimdConvolutionActivationSwish>(__m128 value, const __m128* params, size_t index)
         {
             return Swish(value, params[0]);
+        }
+
+        template<> SIMD_INLINE __m128 Activate<::SimdConvolutionActivationGelu>(__m128 value, const __m128* params, size_t index)
+        {
+            return Gelu(value);
         }
 
         //---------------------------------------------------------------------
@@ -490,6 +506,11 @@ namespace Simd
             return Avx2::Swish(value, _mm256_set1_ps(params[0]));
         }
 
+        template<> SIMD_INLINE __m256 Activate<::SimdConvolutionActivationGelu>(__m256 value, const float* params, size_t offset)
+        {
+            return Avx2::Gelu(value);
+        }
+
         //---------------------------------------------------------------------
 
         template<::SimdConvolutionActivationType type> SIMD_INLINE __m256 Activate(__m256 value, const __m256 * params, size_t index);
@@ -542,6 +563,11 @@ namespace Simd
         template<> SIMD_INLINE __m256 Activate<::SimdConvolutionActivationSwish>(__m256 value, const __m256* params, size_t index)
         {
             return Avx2::Swish(value, params[0]);
+        }
+
+        template<> SIMD_INLINE __m256 Activate<::SimdConvolutionActivationGelu>(__m256 value, const __m256* params, size_t index)
+        {
+            return Avx2::Gelu(value);
         }
 
         //---------------------------------------------------------------------
@@ -677,6 +703,11 @@ namespace Simd
             return Swish(value, _mm512_set1_ps(params[0]));
         }
 
+        template<> SIMD_INLINE __m512 Activate<::SimdConvolutionActivationGelu>(__m512 value, const float* params, size_t offset, __mmask16 tail)
+        {
+            return Gelu(value);
+        }
+
         //---------------------------------------------------------------------
 
         template<::SimdConvolutionActivationType type> SIMD_INLINE __m512 Activate(__m512 value, const __m512 * params, size_t index);
@@ -729,6 +760,11 @@ namespace Simd
         template<> SIMD_INLINE __m512 Activate<::SimdConvolutionActivationSwish>(__m512 value, const __m512* params, size_t index)
         {
             return Swish(value, params[0]);
+        }
+
+        template<> SIMD_INLINE __m512 Activate<::SimdConvolutionActivationGelu>(__m512 value, const __m512* params, size_t index)
+        {
+            return Gelu(value);
         }
 
         //---------------------------------------------------------------------
@@ -901,6 +937,11 @@ namespace Simd
         template<> SIMD_INLINE float32x4_t Activate<::SimdConvolutionActivationSwish>(float32x4_t value, const float32x4_t* params, size_t index)
         {
             return Neon::Swish<1>(value, params[0]);
+        }
+
+        template<> SIMD_INLINE float32x4_t Activate<::SimdConvolutionActivationGelu>(float32x4_t value, const float32x4_t* params, size_t index)
+        {
+            return Neon::Gelu<1>(value);
         }
 
         template <TermType term> struct Term

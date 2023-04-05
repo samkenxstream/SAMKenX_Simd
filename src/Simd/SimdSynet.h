@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -267,6 +267,11 @@ namespace Simd
         template<> SIMD_INLINE float SynetUnaryOperation32f<SimdSynetUnaryOperation32fAbs>(float value)
         {
             return value > 0 ? value : -value;
+        }
+
+        template<> SIMD_INLINE float SynetUnaryOperation32f<SimdSynetUnaryOperation32fErf>(float value)
+        {
+            return ::erf(value);
         }
 
         template<> SIMD_INLINE float SynetUnaryOperation32f<SimdSynetUnaryOperation32fExp>(float value)

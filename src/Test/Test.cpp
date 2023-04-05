@@ -109,6 +109,7 @@ namespace Test
     TEST_ADD_GROUP_A0(BgraToYuv420p);
     TEST_ADD_GROUP_A0(BgraToYuv420pV2);
     TEST_ADD_GROUP_A0(BgraToYuv422p);
+    TEST_ADD_GROUP_A0(BgraToYuv422pV2);
     TEST_ADD_GROUP_A0(BgraToYuv444p);
     TEST_ADD_GROUP_A0(BgraToYuv444pV2);
     TEST_ADD_GROUP_A0(BgrToYuv420p);
@@ -116,6 +117,7 @@ namespace Test
     TEST_ADD_GROUP_A0(BgrToYuv444p);
     TEST_ADD_GROUP_A0(Uyvy422ToYuv420p);
     TEST_ADD_GROUP_A0(BgraToYuva420p);
+    TEST_ADD_GROUP_A0(BgraToYuva420pV2);
 
     TEST_ADD_GROUP_A0(BackgroundGrowRangeSlow);
     TEST_ADD_GROUP_A0(BackgroundGrowRangeFast);
@@ -363,10 +365,9 @@ namespace Test
     TEST_ADD_GROUP_A0(SynetEltwiseLayerForward);
     TEST_ADD_GROUP_A0(SynetLrnLayerCrossChannels);
     TEST_ADD_GROUP_A0(SynetShuffleLayerForward);
-    TEST_ADD_GROUP_A0(SynetSoftmaxLayerForward);
-    TEST_ADD_GROUP_A0(SynetUnaryOperation32fLayerForward);
 
     TEST_ADD_GROUP_A0(SynetElu32f);
+    TEST_ADD_GROUP_A0(SynetGelu32f);
     TEST_ADD_GROUP_A0(SynetHardSigmoid32f);
     TEST_ADD_GROUP_A0(SynetHswish32f);
     TEST_ADD_GROUP_A0(SynetMish32f);
@@ -414,6 +415,10 @@ namespace Test
 
     TEST_ADD_GROUP_A0(SynetScaleLayerForward);
     TEST_ADD_GROUP_A0(SynetScale8iForward);
+
+    TEST_ADD_GROUP_A0(SynetSoftmaxLayerForward);
+
+    TEST_ADD_GROUP_A0(SynetUnaryOperation32f);
 #endif
 
     TEST_ADD_GROUP_A0(TextureBoostedSaturatedGradient);

@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -232,6 +232,8 @@ namespace Simd
         case SimdConvolutionActivationSwish:
             _params[0] = params[0];
             break;
+        case SimdConvolutionActivationGelu:
+            break;
         default:
             assert(0);
         }
@@ -379,6 +381,9 @@ namespace Simd
                 break;
             case SimdConvolutionActivationSwish:
                 SynetSwish32f(dst32f, _merge * _sizeD, _params.data, dst32f);
+                break;
+            case SimdConvolutionActivationGelu:
+                SynetGelu32f(dst32f, _merge * _sizeD, dst32f);
                 break;
             default:
                 assert(0);

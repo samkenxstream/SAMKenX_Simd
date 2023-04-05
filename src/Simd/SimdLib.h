@@ -211,6 +211,13 @@ typedef enum
         \endverbatim
     */
     SimdConvolutionActivationSwish,
+    /*!
+        GELU (https://en.wikipedia.org/wiki/Activation_function) activation function.
+        \verbatim
+        dst[i] = src[i] * (1 + erf(src[i]/sqrt(2))) / 2;
+        \endverbatim
+    */
+    SimdConvolutionActivationGelu,
 } SimdConvolutionActivationType;
 
 /*! @ingroup c_types
@@ -457,12 +464,14 @@ typedef enum
 } SimdSynetEltwiseOperationType;
 
 /*! @ingroup synet_types
-    Describes operation type used in function ::SimdSynetUnaryOperation32fLayerForward.
+    Describes operation type used in function ::SimdSynetUnaryOperation32f.
 */
 typedef enum
 {
     /*! Gets absolute value for every point of input tensor. */
     SimdSynetUnaryOperation32fAbs,
+    /*! Gets erf (error function) for every point of input tensor. */
+    SimdSynetUnaryOperation32fErf,
     /*! Gets exponent for every point of input tensor. */
     SimdSynetUnaryOperation32fExp,
     /*! Gets logarithm for every point of input tensor. */
@@ -487,16 +496,6 @@ typedef enum
     SimdTensorFormatUnknown = -1, /*!< Unknown tensor format. */
     SimdTensorFormatNchw, /*!< NCHW (N - batch, C - channels, H - height, W - width) 4D-tensor format of (input/output) image. */
     SimdTensorFormatNhwc, /*!< NHWC (N - batch, H - height, W - width, C - channels) 4D-tensor format of (input/output) image. */
-    SimdTensorFormatNchw4c, /*!< NCHW4c (N - batch, C - (channels + 3) / 4, H - height, W - width, 4c - channels gropped by 4) special 5D-tensor format of (input/output) image optimized for SSE and NEON. */
-    SimdTensorFormatNchw8c, /*!< NCHW8c (N - batch, C - (channels + 7) / 8, H - height, W - width, 8c - channels gropped by 8) special 5D-tensor format of (input/output) image optimized for AVX and AVX2. */
-    SimdTensorFormatNchw16c, /*!< NCHW16c (N - batch, C - (channels + 15) / 16, H - height, W - width, 16c - channels gropped by 16) special 5D-tensor format of (input/output) image optimized for AVX-512. */
-    SimdTensorFormatNchwXc, /*!< Unspecified hardware optimized 5D-tensor format of (input/output) image. Specific format (::SimdTensorFormatNchw4c, ::SimdTensorFormatNchw8c or ::SimdTensorFormatNchw16c) is determinated by function ::SimdSynetSpecifyTensorFormat. */
-    SimdTensorFormatOiyx, /*!< OIYX (O - output channels, I - input channels, Y - kernel height, X - kernel width) 4D-tensor format of 2D-convolution filter. */
-    SimdTensorFormatYxio, /*!< YXIO (Y - kernel height, X - kernel width, I - input channels, O - output channels) 4D-tensor format of 2D-convolution filter. */
-    SimdTensorFormatOyxi4o, /*!< OYXI4o (O - (output channels + 3)/4, Y - kernel height, X - kernel width, I - input channels, 4o - output channels gropped by 4) special 5D-tensor format of 2D-convolution filter optimized for SSE and NEON. */
-    SimdTensorFormatOyxi8o, /*!< OYXI8o (O - (output channels + 7)/8, Y - kernel height, X - kernel width, I - input channels, 8o - output channels gropped by 8) special 5D-tensor format of 2D-convolution filter optimized for AVX and AVX2. */
-    SimdTensorFormatOyxi16o, /*!< OYXI16o (O - (output channels + 15)/16, Y - kernel height, X - kernel width, I - input channels, 16o - output channels gropped by 16) special 5D-tensor format of 2D-convolution filter optimized for AVX-512. */
-    SimdTensorFormatOyxiXo, /*!< Unspecified hardware optimized 5D-tensor format of 2D-convolution filter. Specific format (::SimdTensorFormatOyxi4o, ::SimdTensorFormatOyxi8o or ::SimdTensorFormatOyxi16o) is determinated by function ::SimdSynetSpecifyTensorFormat. */
 } SimdTensorFormatType;
 
 /*! @ingroup synet_types
@@ -1789,6 +1788,29 @@ extern "C"
 
     /*! @ingroup bgra_conversion
 
+        \fn void SimdBgraToYuv422pV2(const uint8_t * bgra, size_t bgraStride, size_t width, size_t height, uint8_t * y, size_t yStride, uint8_t * u, size_t uStride, uint8_t * v, size_t vStride, SimdYuvType yuvType);
+
+        \short Converts 32-bit BGRA image to YUV422P.
+
+        The input BGRA and output Y images must have the same width and height.
+        The input U and V images must have the same width and height (their width is equal to half width of Y component).
+
+        \param [in] bgra - a pointer to pixels data of input 32-bit BGRA image.
+        \param [in] bgraStride - a row size of the BGRA image.
+        \param [in] width - an image width.
+        \param [in] height - an image height.
+        \param [out] y - a pointer to pixels data of output 8-bit image with Y color plane.
+        \param [in] yStride - a row size of the y image.
+        \param [out] u - a pointer to pixels data of output 8-bit image with U color plane.
+        \param [in] uStride - a row size of the u image.
+        \param [out] v - a pointer to pixels data of output 8-bit image with V color plane.
+        \param [in] vStride - a row size of the v image.
+        \param [in] yuvType - a type of output YUV image (see descriprion of ::SimdYuvType).
+    */
+    SIMD_API void SimdBgraToYuv422pV2(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height, uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride, SimdYuvType yuvType);
+
+    /*! @ingroup bgra_conversion
+
         \fn void SimdBgraToYuv444p(const uint8_t * bgra, size_t width, size_t height, size_t bgraStride, uint8_t * y, size_t yStride, uint8_t * u, size_t uStride, uint8_t * v, size_t vStride);
 
         \short Converts 32-bit BGRA image to YUV444P.
@@ -1859,6 +1881,32 @@ extern "C"
     */
     SIMD_API void SimdBgraToYuva420p(const uint8_t * bgra, size_t bgraStride, size_t width, size_t height, 
         uint8_t * y, size_t yStride, uint8_t * u, size_t uStride, uint8_t * v, size_t vStride, uint8_t * a, size_t aStride);
+
+    /*! @ingroup bgra_conversion
+
+        \fn void SimdBgraToYuva420pV2(const uint8_t * bgra, size_t bgraStride, size_t width, size_t height, uint8_t * y, size_t yStride, uint8_t * u, size_t uStride, uint8_t * v, size_t vStride, uint8_t * a, size_t aStride, SimdYuvType yuvType);
+
+        \short Converts 32-bit BGRA image to YUVA420P.
+
+        The input BGRA and output Y and A images must have the same width and height.
+        The input U and V images must have the same width and height (half size relative to Y component).
+
+        \param [in] bgra - a pointer to pixels data of input 32-bit BGRA image.
+        \param [in] bgraStride - a row size of the BGRA image.
+        \param [in] width - an image width.
+        \param [in] height - an image height.
+        \param [out] y - a pointer to pixels data of output 8-bit image with Y color plane.
+        \param [in] yStride - a row size of the y image.
+        \param [out] u - a pointer to pixels data of output 8-bit image with U color plane.
+        \param [in] uStride - a row size of the u image.
+        \param [out] v - a pointer to pixels data of output 8-bit image with V color plane.
+        \param [in] vStride - a row size of the v image.
+        \param [out] a - a pointer to pixels data of output 8-bit image with alpha plane.
+        \param [in] aStride - a row size of the a image.
+        \param [in] yuvType - a type of output YUV image (see descriprion of ::SimdYuvType).
+    */
+    SIMD_API void SimdBgraToYuva420pV2(const uint8_t* bgra, size_t bgraStride, size_t width, size_t height,
+        uint8_t* y, size_t yStride, uint8_t* u, size_t uStride, uint8_t* v, size_t vStride, uint8_t* a, size_t aStride, SimdYuvType yuvType);
 
     /*! @ingroup bgr_conversion
 
@@ -3216,26 +3264,6 @@ extern "C"
         \param [out] norms - a pointer to result 32-bit float array with vector norms. It size must be N.
     */
     SIMD_API void SimdVectorNormNp16f(size_t N, size_t K, const uint16_t* A, float* norms);
-
-    /*! @ingroup float16
-
-        \fn void SimdCosineDistancesMxNp16f(size_t M, size_t N, size_t K, const uint16_t* A, const uint16_t* B, float* distances);
-
-        \short Calculates mutual cosine distance of two arrays of 16-bit float arrays.
-
-        Algorithm description:
-        \verbatim
-        distances[i, j] = 1 - Sum(A[i*K + k]*B[j*K + k])/Sqrt(Sum(A[i*K + k]*A[i*K + k])*Sum(B[j*K + k]*B[j*K + k]));
-        \endverbatim
-
-        \param [in] M - a number of A arrays.
-        \param [in] N - a number of B arrays.
-        \param [in] K - a size of A and B arrays.
-        \param [in] A - a pointer to 16-bit float arrays.
-        \param [in] B - a pointer to 16-bit float arrays.
-        \param [out] distances - a pointer to result 32-bit float array with cosine distances. It size must be M*N.
-    */
-    SIMD_API void SimdCosineDistancesMxNp16f(size_t M, size_t N, size_t K, const uint16_t* A, const uint16_t* B, float* distances);
 
     /*! @ingroup other_conversion
 
@@ -7025,6 +7053,26 @@ extern "C"
 
     /*! @ingroup synet_activation
 
+        \fn void SimdSynetGelu32f(const float* src, size_t size, float* dst);
+
+        \short This function is used for forward propagation of GeluLayer.
+
+        Algorithm's details:
+        \verbatim
+        for(i = 0; i < size; ++i)
+            dst[i] = src[i] * (1 + erf(src[i]/sqrt(2))) / 2;
+        \endverbatim
+
+        \note This function is used in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+
+        \param [in] src - a pointer to the 32-bit float array.
+        \param [in] size - a size of input and output arrays.
+        \param [out] dst - a pointer to output 32-bit float array.
+    */
+    SIMD_API void SimdSynetGelu32f(const float* src, size_t size, float* dst);
+
+    /*! @ingroup synet_activation
+
         \fn void SimdSynetHardSigmoid32f(const float * src, size_t size, const float * scale, const float * shift, float * dst);
 
         \short Calculates HardSigmoid activation function (https://pytorch.org/docs/stable/generated/torch.nn.Hardsigmoid.html) for 32-bit float array.
@@ -7813,21 +7861,6 @@ extern "C"
     */
     SIMD_API void SimdSynetSoftplus32f(const float* src, size_t size, const float * beta, const float * threshold, float * dst);
 
-    /*! @ingroup synet_other
-
-        \fn SimdTensorFormatType SimdSynetSpecifyTensorFormat(SimdTensorFormatType format);
-
-        \short Specifies hardware optimized tensor format of 5D-tensor for (input/output) image or 2D-convolution filter.
-
-        \note This function is used in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>. 
-
-        \warning This functionality is deprecated and can be removed in the future.
-
-        \param [in] format - an unspecified hardware optimized 5D-tensor format of (input/output) image or 2D-convolution filter. It can be ::SimdTensorFormatNchwXc or ::SimdTensorFormatOyxiXo.
-        \return specified hardware optimized 5D-tensor format. 
-    */
-    SIMD_API SIMD_DEPRECATED SimdTensorFormatType SimdSynetSpecifyTensorFormat(SimdTensorFormatType format);
-
     /*! @ingroup synet_activation
 
         \fn void SimdSynetSwish32f(const float * src, size_t size, const float * slope, float * dst);
@@ -7875,22 +7908,7 @@ extern "C"
 
     /*! @ingroup synet_other
 
-        \fn size_t SimdSynetTensorAlignment(SimdTensorFormatType format);
-
-        \short Gets alignment requred for current tensor format.
-
-        \note This function is used in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
-
-        \warning This functionality is deprecated and can be removed in the future.
-
-        \param [in] format - a tensor format.
-        \return alignment requred for current tensor format.
-    */
-    SIMD_API SIMD_DEPRECATED size_t SimdSynetTensorAlignment(SimdTensorFormatType format);
-
-    /*! @ingroup synet_other
-
-        \fn void SimdSynetUnaryOperation32fLayerForward(const float * src, size_t size, SimdSynetUnaryOperation32fType type, float* dst);
+        \fn void SimdSynetUnaryOperation32f(const float * src, size_t size, SimdSynetUnaryOperation32fType type, float* dst);
 
         \short This function is used for forward propagation of UnaryOperationLayer.
 
@@ -7901,7 +7919,7 @@ extern "C"
         \param [in] type - an unary operation type (see ::SimdSynetUnaryOperation32fType).
         \param [out] dst - a pointer to the output 32-bit float array.
     */
-    SIMD_API void SimdSynetUnaryOperation32fLayerForward(const float * src, size_t size, SimdSynetUnaryOperation32fType type, float * dst);
+    SIMD_API void SimdSynetUnaryOperation32f(const float * src, size_t size, SimdSynetUnaryOperation32fType type, float * dst);
 
     /*! @ingroup texture_estimation
 
