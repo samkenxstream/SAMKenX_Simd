@@ -87,6 +87,12 @@ namespace Simd
 
     namespace Base
     {
+        SIMD_INLINE float Not(float f)
+        {
+            int i = ~(int&)f;
+            return (float&)i;
+        }
+
         SIMD_INLINE int Min(int a, int b)
         {
             return a < b ? a : b;
@@ -250,6 +256,23 @@ namespace Simd
         SIMD_INLINE __m128 Square(__m128 value)
         {
             return _mm_mul_ps(value, value);
+        }
+
+        SIMD_INLINE __m128 Not(__m128 value)
+        {
+            return _mm_andnot_ps(value, _mm_castsi128_ps(K_INV_ZERO));
+        }
+
+        template<bool fast> __m128 Rcp(__m128 value);
+
+        template<> SIMD_INLINE __m128 Rcp<true>(__m128 value)
+        {
+            return _mm_rcp_ps(value);
+        }
+
+        template<> SIMD_INLINE __m128 Rcp<false>(__m128 value)
+        {
+            return _mm_div_ps(_mm_set1_ps(1.0f), value);
         }
 
         template<bool fast> __m128 Sqrt(__m128 value);
@@ -479,6 +502,20 @@ namespace Simd
         {
             return _mm_testz_si128(value, K_INV_ZERO);
         }
+
+        SIMD_INLINE void MaxVal32f(__m128 src, float& dst)
+        {
+            src = _mm_max_ps(src, Shuffle32f<0x0E>(src));
+            src = _mm_max_ss(src, Shuffle32f<0x01>(src));
+            _mm_store_ss(&dst, src);
+        }
+
+        SIMD_INLINE void MinVal32f(__m128 src, float& dst)
+        {
+            src = _mm_min_ps(src, Shuffle32f<0x0E>(src));
+            src = _mm_min_ss(src, Shuffle32f<0x01>(src));
+            _mm_store_ss(&dst, src);
+        }
     }
 #endif// SIMD_SSE41_ENABLE
 
@@ -488,6 +525,18 @@ namespace Simd
         SIMD_INLINE __m256 Square(__m256 value)
         {
             return _mm256_mul_ps(value, value);
+        }
+
+        template<bool fast> __m256 Rcp(__m256 value);
+
+        template<> SIMD_INLINE __m256 Rcp<true>(__m256 value)
+        {
+            return _mm256_rcp_ps(value);
+        }
+
+        template<> SIMD_INLINE __m256 Rcp<false>(__m256 value)
+        {
+            return _mm256_div_ps(_mm256_set1_ps(1.0f), value);
         }
 
         template<bool fast> __m256 Sqrt(__m256 value);
@@ -549,6 +598,16 @@ namespace Simd
         {
             return _mm256_and_ps(value, mask);
         }
+
+        SIMD_INLINE void MaxVal32f(__m256 src, float& dst)
+        {
+            Sse41::MaxVal32f(_mm_max_ps(_mm256_castps256_ps128(src), _mm256_extractf128_ps(src, 1)), dst);
+        }
+
+        SIMD_INLINE void MinVal32f(__m256 src, float& dst)
+        {
+            Sse41::MinVal32f(_mm_min_ps(_mm256_castps256_ps128(src), _mm256_extractf128_ps(src, 1)), dst);
+        }
     }
 #endif//SIMD_AVX_ENABLE
 
@@ -558,6 +617,11 @@ namespace Simd
 #if defined(_MSC_VER) && _MSC_VER >= 1700  && _MSC_VER < 1900 // Visual Studio 2012/2013 compiler bug     
         using Avx::RightNotZero32f;
 #endif
+
+        SIMD_INLINE __m256 Not(__m256 value)
+        {
+            return _mm256_andnot_ps(value, _mm256_castsi256_ps(K_INV_ZERO));
+        }
 
         SIMD_INLINE __m256i SaturateI16ToU8(__m256i value)
         {
@@ -777,6 +841,11 @@ namespace Simd
 #endif
         }
 
+        SIMD_INLINE __m512 Not(__m512 value)
+        {
+            return _mm512_andnot_ps(value, _mm512_castsi512_ps(K_INV_ZERO));
+        }
+
         SIMD_INLINE __m512 AndNotMaskZ(const __m512& a, const __m512& b, __mmask16 m)
         {
 #if defined(__clang__)
@@ -793,6 +862,18 @@ namespace Simd
 #else
             return _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(a), _mm512_castps_si512(b)));
 #endif
+        }
+
+        template<bool fast> __m512 Rcp(__m512 value);
+
+        template<> SIMD_INLINE __m512 Rcp<true>(__m512 value)
+        {
+            return _mm512_rcp14_ps(value);
+        }
+
+        template<> SIMD_INLINE __m512 Rcp<false>(__m512 value)
+        {
+            return _mm512_div_ps(_mm512_set1_ps(1.0f), value);
         }
 
         SIMD_INLINE __m512 Rcp14(const __m512& a)
@@ -836,6 +917,22 @@ namespace Simd
         }
 
         template<> SIMD_INLINE __m512 Alignr<F>(const __m512& lo, const __m512& hi)
+        {
+            return hi;
+        }
+
+
+        template<int shift> SIMD_INLINE __m512i Alignr(const __m512i& lo, const __m512i& hi)
+        {
+            return _mm512_alignr_epi32(hi, lo, shift);
+        }
+
+        template<> SIMD_INLINE __m512i Alignr<0>(const __m512i& lo, const __m512i& hi)
+        {
+            return lo;
+        }
+
+        template<> SIMD_INLINE __m512i Alignr<F>(const __m512i& lo, const __m512i& hi)
         {
             return hi;
         }
@@ -1035,6 +1132,16 @@ namespace Simd
         template <int part> SIMD_INLINE __m512i Cvt8iTo16i(__m512i a)
         {
             return _mm512_cvtepi8_epi16(_mm512_extracti64x4_epi64(a, part));
+        }
+
+        SIMD_INLINE void MaxVal32f(__m512 src, float& dst)
+        {
+            Avx::MaxVal32f(_mm256_max_ps(_mm512_extractf32x8_ps(src, 0), _mm512_extractf32x8_ps(src, 1)), dst);
+        }
+
+        SIMD_INLINE void MinVal32f(__m512 src, float& dst)
+        {
+            Avx::MinVal32f(_mm256_min_ps(_mm512_extractf32x8_ps(src, 0), _mm512_extractf32x8_ps(src, 1)), dst);
         }
     }
 #endif //SIMD_AVX512BW_ENABLE
@@ -1447,6 +1554,11 @@ namespace Simd
         {
             const int32_t mask[DF] = { -1, -1, -1, -1, 0, 0, 0, 0 };
             return vld1q_f32((float*)(mask + F - Simd::RestrictRange<ptrdiff_t>(count, 0, F)));
+        }
+
+        SIMD_INLINE float32x4_t Not(float32x4_t a)
+        {
+            return (float32x4_t)vmvnq_u32((uint32x4_t)a);
         }
 
         SIMD_INLINE float32x4_t And(float32x4_t a, float32x4_t b)

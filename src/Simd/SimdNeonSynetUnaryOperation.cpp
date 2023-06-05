@@ -63,6 +63,16 @@ namespace Simd
             return vnegq_f32(value);
         }
 
+        template<> SIMD_INLINE float32x4_t SynetUnaryOperation32f<SimdSynetUnaryOperation32fNot>(float32x4_t value)
+        {
+            return Not(value);
+        }
+
+        template<> SIMD_INLINE float32x4_t SynetUnaryOperation32f<SimdSynetUnaryOperation32fRcp>(float32x4_t value)
+        {
+            return Reciprocal<1>(value);
+        }
+
         template<> SIMD_INLINE float32x4_t SynetUnaryOperation32f<SimdSynetUnaryOperation32fRsqrt>(float32x4_t value)
         {
             return ReciprocalSqrt<1>(value);
@@ -110,6 +120,8 @@ namespace Simd
             case SimdSynetUnaryOperation32fExp: SynetUnaryOperation32f<SimdSynetUnaryOperation32fExp, align>(src, size, dst); break;
             case SimdSynetUnaryOperation32fLog: SynetUnaryOperation32f<SimdSynetUnaryOperation32fLog, align>(src, size, dst); break;
             case SimdSynetUnaryOperation32fNeg: SynetUnaryOperation32f<SimdSynetUnaryOperation32fNeg, align>(src, size, dst); break;
+            case SimdSynetUnaryOperation32fNot: SynetUnaryOperation32f<SimdSynetUnaryOperation32fNot, align>(src, size, dst); break;
+            case SimdSynetUnaryOperation32fRcp: SynetUnaryOperation32f<SimdSynetUnaryOperation32fRcp, align>(src, size, dst); break;
             case SimdSynetUnaryOperation32fRsqrt: SynetUnaryOperation32f<SimdSynetUnaryOperation32fRsqrt, align>(src, size, dst); break;
             case SimdSynetUnaryOperation32fSqrt: SynetUnaryOperation32f<SimdSynetUnaryOperation32fSqrt, align>(src, size, dst); break;
             case SimdSynetUnaryOperation32fTanh: SynetUnaryOperation32f<SimdSynetUnaryOperation32fTanh, align>(src, size, dst); break;

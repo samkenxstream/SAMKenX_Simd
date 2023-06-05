@@ -23,8 +23,10 @@
 */
 #include "Test/TestFile.h"
 
-#ifdef WIN32
+#if defined(_WIN32)
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #include <filesystem>
 #endif
@@ -32,23 +34,21 @@
 #ifdef __linux__
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #endif
 
 namespace Test
 {
     bool FileExists(const String& path)
     {
-#if defined(WIN32)
-        DWORD fileAttribute = ::GetFileAttributes(path.c_str());
-        return (fileAttribute != INVALID_FILE_ATTRIBUTES);
-#else
-        return (::access(path.c_str(), F_OK) != -1);
-#endif
+        std::ifstream ifs;
+        ifs.open(path, std::ios::in | std::ios::binary);
+        return (!ifs.fail());
     }
 
     bool DirectoryExists(const String & path)
     {
-#if defined(WIN32)
+#if defined(_WIN32)
         DWORD fileAttribute = GetFileAttributes(path.c_str());
         return ((fileAttribute != INVALID_FILE_ATTRIBUTES) &&
             (fileAttribute & FILE_ATTRIBUTE_DIRECTORY) != 0);
@@ -77,7 +77,7 @@ namespace Test
 
     bool CreatePath(const String & path)
     {
-#ifdef WIN32
+#if defined(_WIN32)
         return std::system((String("mkdir ") + path).c_str()) == 0;
 #else
         return std::system((String("mkdir -p ") + path).c_str()) == 0;

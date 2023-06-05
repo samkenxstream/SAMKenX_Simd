@@ -33,7 +33,88 @@
 </center>
 
 <hr/>
-<h3 id="R125">May X, 2023 (version X.X.125)</h3>
+<h3 id="R127">July 5, 2023 (version X.X.127)</h3>
+<h4>Algorithms</h4>
+<h5>New features</h5>
+<ul>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntEncode16f.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntDecode16f.</li>
+</ul>
+<h5>Renaming</h5>
+<ul>
+ <li>Function DescrIntEncode to DescrIntEncode32f.</li>
+ <li>Function DescrIntDecode to DescrIntDecode32f.</li>
+</ul>
+
+<h4>Test framework</h4>
+<h5>New features</h5>
+<ul>
+ <li>Tests for verifying functionality of function DescrIntEncode16f.</li>
+ <li>Tests for verifying functionality of function DescrIntDecode16f.</li>
+</ul>
+
+<a href="#HOME">Home</a>
+<hr/>
+<h3 id="R126">June 5, 2023 (version 5.3.126)</h3>
+<h4>Algorithms</h4>
+<h5>New features</h5>
+<ul>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntEncode.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntDecode.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntCosineDistance.</li>
+ <li>Base implementation optimizations of function DescrIntVectorNorm.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntCosineDistancesMxNp.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function DescrIntCosineDistancesMxNa.</li>
+ <li>SimdSynetUnaryOperation32fRcp member in enumeration SimdSynetUnaryOperationType.</li>
+ <li>Support of SimdSynetUnaryOperation32fRcp in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of function SynetUnaryOperation32f.</li>
+ <li>SimdSynetUnaryOperation32fNot member in enumeration SimdSynetUnaryOperationType.</li>
+ <li>Support of SimdSynetUnaryOperation32fNot in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of function SynetUnaryOperation32f.</li>
+ <li>Support of SimdSynetUnaryOperation32fNot in Base implementation, SSE4.1, AVX2, AVX-512BW, NEON optimizations of function SynetUnaryOperation32f.</li>
+ <li>Helper function Simd::InvertAffineTransform.</li>
+</ul>
+<h5>Improving</h5>
+<ul>
+ <li>SSE4.1, AVX, AVX-512BW optimizations of method SynetDeconvolution32fGemmNN::RowToImg.</li>
+ <li>AVX-512BW optimizations of function SynetUnaryOperation32f (case of SimdSynetUnaryOperation32fLog, SimdSynetUnaryOperation32fExp).</li>
+ <li>AVX-512BW optimizations of function SynetSoftplus32f.</li>
+</ul>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Error in AVX2 optimizations of function SynetSoftmaxLayerForward.</li>
+ <li>GCC compiler error in file SimdDrawing.hpp (Windows, MinGW).</li>
+ <li>GCC compiler error in function Test::FileExists (Windows, MinGW).</li>
+ <li>Crash in function SimdSynetDeconvolution32fForward (Linux, GCC-12, GCC-13).</li>
+ <li>Crash in function Base::AlgCacheL3 (Windows, MinGW).</li>
+ <li>Using of _WIN32 macro instead of WIN32.</li>
+</ul>
+
+<h4>Test framework</h4>
+<h5>New features</h5>
+<ul>
+ <li>Tests for verifying functionality of function DescrIntEncode.</li>
+ <li>Tests for verifying functionality of function DescrIntDecode.</li>
+ <li>Tests for verifying functionality of function DescrIntCosineDistance.</li>
+ <li>Tests for verifying functionality of function DescrIntCosineDistancesMxNp.</li>
+ <li>Tests for verifying functionality of function DescrIntCosineDistancesMxNa.</li>
+ <li>Test command line argument '-cc' to run CheckCpp tests.</li>
+</ul>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Test log messages after test error stoppage (multithreaded run).</li>
+ <li>Error in CheckCpp tests.</li>
+</ul>
+
+<h4>Infrastructure</h4>
+<h5>New features</h5>
+<ul>
+ <li>Github actions script for CMake (build and test for MinGW, Windows).</li>
+ <li>Github actions script for CMake (build and test for GCC-12, Linux).</li>
+</ul>
+
+
+<a href="#HOME">Home</a>
+<hr/>
+<h3 id="R125">May 1, 2023 (version 5.2.125)</h3>
 <h4>Algorithms</h4>
 <h5>New features</h5>
 <ul>
@@ -63,10 +144,30 @@
  <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iCd.</li>
  <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iCdc.</li>
  <li>Support of SimdConvolutionActivationGelu in Base implementation, SSE4.1, AVX2, AVX-512BW, AVX-512VNNI, AMX-INT8 optimizations of class SynetMergedConvolution8iDc.</li>
+ <li>Base implementation, SSE4.1, AVX2, AVX-512BW optimizations of function SynetNormalizeLayerForwardV2.</li>
 </ul>
 <h5>Improving</h5>
 <ul>
  <li>SSE4.1, AVX2, AVX-512BW, NEON optimizations of function Erf.</li>
+ <li>Performance of function Simd::Parallel.</li>
+ <li>Using of resize method SimdResizeMethodArea in ImageMatcher::Create (more precise than SimdResizeMethodBilinear).</li>
+</ul>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Compiler error in SimdImageMatcher.hpp (using of internal functions).</li>
+ <li>Wrong API of function ImageMatcher.Skip().</li>
+</ul>
+
+<h4>Test framework</h4>
+<h5>New features</h5>
+<ul>
+ <li>Tests for verifying functionality of function SynetNormalizeLayerForwardV2.</li>
+</ul>
+
+<h4>Infrastructure</h4>
+<h5>Bug fixing</h5>
+<ul>
+ <li>Github actions script for MSBuild (Restore NuGet packages timeout exit).</li>
 </ul>
 
 <a href="#HOME">Home</a>

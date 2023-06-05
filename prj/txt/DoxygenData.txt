@@ -182,6 +182,7 @@
      - `-ri=city.jpg` a name of real image used in some tests. The image have to be placed in `./data/image` directory.
      - `-tr=2` a number of test execution repeats.
      - `-ts=1` to print statistics of time of tests execution.
+     - `-cc=1` to check c++ API.
 */
 
 /*! @defgroup c_types C Types
@@ -612,16 +613,6 @@
 */
 
 /*! @ingroup synet
-    @defgroup synet_merged_convolution_fp32 FP32 merged convolution frameworks
-    \short A framework to accelerate FP32 merged convolution in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
-*/
-
-/*! @ingroup synet
-    @defgroup synet_merged_convolution_int8 INT8 merged convolution frameworks
-    \short A framework to accelerate INT8 merged convolution in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
-*/
-
-/*! @ingroup synet
     @defgroup synet_fused FusedLayer functions
     \short Functions to acceleratе FusedLayer in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
 */
@@ -632,8 +623,18 @@
 */
 
 /*! @ingroup synet
-    @defgroup synet_scale ScaleLayer functions
-    \short Functions to acceleratе layer scale in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+    @defgroup synet_merged_convolution_fp32 FP32 merged convolution frameworks
+    \short A framework to accelerate FP32 merged convolution in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+*/
+
+/*! @ingroup synet
+    @defgroup synet_merged_convolution_int8 INT8 merged convolution frameworks
+    \short A framework to accelerate INT8 merged convolution in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+*/
+
+/*! @ingroup synet
+    @defgroup synet_normalize NormalizeLayer functions
+    \short Functions to acceleratе NormalizeLayer in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
 */
 
 /*! @ingroup synet
@@ -644,6 +645,11 @@
 /*! @ingroup synet
     @defgroup synet_pooling PoolingLayer functions
     \short Functions to acceleratе PoolingLayer in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+*/
+
+/*! @ingroup synet
+    @defgroup synet_scale ScaleLayer functions
+    \short Functions to acceleratе layer scale in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
 */
 
 /*! @ingroup synet
@@ -674,4 +680,9 @@
 /*! @ingroup functions
     @defgroup warp_affine Affine Warp
     \short Functions for Affine Warp of images.
+*/
+
+/*! @ingroup functions
+    @defgroup descrint Integer Descriptor
+    \short Functions for conversion and comparison of Integer Descriptor.
 */

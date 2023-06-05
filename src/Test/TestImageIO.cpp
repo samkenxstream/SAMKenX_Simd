@@ -41,7 +41,7 @@ namespace Test
     {
         if (!REAL_IMAGE.empty())
             return 4;
-#if defined(WIN32)
+#if defined(_WIN32)
 #if !defined(NDEBUG)
         return quality <= 10 ? 32 : 9;
 #else
@@ -631,9 +631,13 @@ namespace Test
                 result = result && Compare(dst1, dst2, 0, true, 64, 0, "dst1 & dst2");
             if (dst1.data && SaveLoadCompatible(format, file, quality))
                 result = result && Compare(dst1, src, 0, true, 64, 0, "dst1 & src");
+            if (!result)
+            {
+                SaveTestImage(dst1, file, quality, "_1");
+                SaveTestImage(dst2, file, quality, "_2");
+                SaveTestImage(src, SimdImageFilePpmBin, 100, "_error");
+            }
         }
-
-        SaveTestImage(dst1, file, quality);
 
         if (dst1.data)
             Simd::Free(dst1.data);

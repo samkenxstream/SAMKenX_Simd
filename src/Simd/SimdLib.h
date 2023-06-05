@@ -478,6 +478,10 @@ typedef enum
     SimdSynetUnaryOperation32fLog,
     /*! Gets negative for every point of input tensor. */
     SimdSynetUnaryOperation32fNeg,
+    /*! Gets reciprocal for every point of input tensor. */
+    SimdSynetUnaryOperation32fNot,
+    /*! Performs logical NOT operation for every point of input tensor. */
+    SimdSynetUnaryOperation32fRcp,
     /*! Gets reverse square root for every point of input tensor. */
     SimdSynetUnaryOperation32fRsqrt,
     /*! Gets square root for every point of input tensor. */
@@ -651,7 +655,7 @@ typedef struct SimdConvolutionParameters
     SimdConvolutionActivationType activation;
 } SimdConvolutionParameters;
 
-#if defined(WIN32) && !defined(SIMD_STATIC)
+#if defined(_WIN32) && !defined(SIMD_STATIC)
 #  ifdef SIMD_EXPORTS
 #    define SIMD_API __declspec(dllexport)
 #  else
@@ -2458,6 +2462,157 @@ extern "C"
     */
     SIMD_API void SimdCopyFrame(const uint8_t * src, size_t srcStride, size_t width, size_t height, size_t pixelSize,
         size_t frameLeft, size_t frameTop, size_t frameRight, size_t frameBottom, uint8_t * dst, size_t dstStride);
+
+    /*! @ingroup descrint
+
+        \fn void * SimdDescrIntInit(size_t size, size_t depth);
+
+        \short Initilizes Integer Descriptor Engine.
+
+        All images must have the same width and height.
+        This function used for NV12 to YUV420P conversion.
+
+        \param [in] size - a length of original (32-bit or 16-bit) float descriptor. It be multiple of 8. Also it must be less or equal than 32768.
+        \param [in] depth - a number of bits in encoded integer descriptor. Supported values: 6, 7, 8.
+        \return a pointer to Integer Descriptor Engine context. On error it returns NULL. It must be released with using of function ::SimdRelease.
+                This pointer is used in functions ::SimdDescrIntEncodedSize, ::SimdDescrIntDecodedSize, 
+                ::SimdDescrIntEncode32f, ::SimdDescrIntEncode16f, ::SimdDescrIntDecode32f, ::SimdDescrIntDecode16f, 
+                ::SimdDescrIntCosineDistance, ::SimdDescrIntCosineDistancesMxNa, ::SimdDescrIntCosineDistancesMxNp, ::SimdDescrIntVectorNorm.
+    */
+    SIMD_API void * SimdDescrIntInit(size_t size, size_t depth);
+
+    /*! @ingroup descrint
+
+        \fn size_t SimdDescrIntEncodedSize(const void* context);
+
+        \short Gets size in bytes of encoded integer descriptor.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \return size in bytes of encoded integer descriptor.
+    */
+    SIMD_API size_t SimdDescrIntEncodedSize(const void* context);
+
+    /*! @ingroup descrint
+
+        \fn size_t SimdDescrIntDecodedSize(const void* context);
+
+        \short Gets length of original (32-bit or 16-bit) float descriptor.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \return length of original (32-bit or 16-bit) float descriptor.
+    */
+    SIMD_API size_t SimdDescrIntDecodedSize(const void* context);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntEncode32f(const void* context, const float * src, uint8_t * dst);
+
+        \short Encodes 32-bit float descriptor to integer form.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] src - a pointer to original 32-bit float descriptor. Its length can be determined by function ::SimdDescrIntDecodedSize.
+        \param [out] dst - a pointer to encoded integer descriptor. Its size in bytes can be determined by function ::SimdDescrIntEncodedSize.
+    */
+    SIMD_API void SimdDescrIntEncode32f(const void* context, const float * src, uint8_t * dst);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntEncode16f(const void* context, const uint16_t * src, uint8_t * dst);
+
+        \short Encodes 16-bit float descriptor to integer form.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] src - a pointer to original 16-bit float descriptor. Its length can be determined by function ::SimdDescrIntDecodedSize.
+        \param [out] dst - a pointer to encoded integer descriptor. Its size in bytes can be determined by function ::SimdDescrIntEncodedSize.
+    */
+    SIMD_API void SimdDescrIntEncode16f(const void* context, const uint16_t* src, uint8_t* dst);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntDecode32f(const void* context, const uint8_t* src, float* dst);
+
+        \short Decodes integer descriptor to original 32-bit float form.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] src - a pointer to encoded integer descriptor. Its size in bytes can be determined by function ::SimdDescrIntEncodedSize.
+        \param [out] dst - a pointer to output 32-bit float descriptor. Its lenght can be determined by function ::SimdDescrIntDecodedSize.
+    */
+    SIMD_API void SimdDescrIntDecode32f(const void* context, const uint8_t* src, float* dst);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntDecode16f(const void* context, const uint8_t* src, uint16_t* dst);
+
+        \short Decodes integer descriptor to original 16-bit float form.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] src - a pointer to encoded integer descriptor. Its size in bytes can be determined by function ::SimdDescrIntEncodedSize.
+        \param [out] dst - a pointer to output 16-bit float descriptor. Its length can be determined by function ::SimdDescrIntDecodedSize.
+    */
+    SIMD_API void SimdDescrIntDecode16f(const void* context, const uint8_t* src, uint16_t* dst);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntCosineDistance(const void* context, const uint8_t* a, const uint8_t* b, float* distance);
+
+        \short Calculates cosine distance of two integer descriptors.
+
+        \note Integer descriptor can be recieved with using of functions ::SimdDescrIntEncode32f of ::SimdDescrIntEncode16f. Its size in bytes is determined by function ::SimdDescrIntEncodedSize.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] a - a pointer to the first integer descriptor. 
+        \param [in] b - a pointer to the second integer descriptor.
+        \param [out] distance - a pointer to 32-bit float with cosine distance.
+    */
+    SIMD_API void SimdDescrIntCosineDistance(const void* context, const uint8_t* a, const uint8_t* b, float* distance);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntCosineDistancesMxNa(const void* context, size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances);
+
+        \short Calculates mutual cosine distance of two arrays of integer descriptor arrays.
+
+        \note Integer descriptor can be recieved with using of functions ::SimdDescrIntEncode32f of ::SimdDescrIntEncode16f. Its size in bytes is determined by function ::SimdDescrIntEncodedSize.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] M - a number of A arrays.
+        \param [in] N - a number of B arrays.
+        \param [in] A - a pointer to the first array with pointers to integer descriptors.
+        \param [in] B - a pointer to the second array with pointers to integer descriptors.
+        \param [out] distances - a pointer to result 32-bit float array with cosine distances. It size must be M*N.
+    */
+    SIMD_API void SimdDescrIntCosineDistancesMxNa(const void* context, size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntCosineDistancesMxNp(const void* context, size_t M, size_t N, const uint8_t* A, const uint8_t* B, float* distances);
+
+        \short Calculates mutual cosine distance of two arrays of integer descriptors.
+
+        \note Integer descriptor can be recieved with using of functions ::SimdDescrIntEncode32f of ::SimdDescrIntEncode16f. Its size in bytes is determined by function ::SimdDescrIntEncodedSize.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] M - a number of A arrays.
+        \param [in] N - a number of B arrays.
+        \param [in] A - a pointer to the first array with integer descriptors.
+        \param [in] B - a pointer to the second array with integer descriptors.
+        \param [out] distances - a pointer to result 32-bit float array with cosine distances. It size must be M*N.
+    */
+    SIMD_API void SimdDescrIntCosineDistancesMxNp(const void* context, size_t M, size_t N, const uint8_t* A, const uint8_t* B, float* distances);
+
+    /*! @ingroup descrint
+
+        \fn void SimdDescrIntVectorNorm(const void* context, const uint8_t* a, float* norm);
+
+        \short Calculates vector norm for integer descriptor.
+
+        \note Integer descriptor can be recieved with using of functions ::SimdDescrIntEncode32f of ::SimdDescrIntEncode16f. Its size in bytes is determined by function ::SimdDescrIntEncodedSize.
+
+        \param [in] context - a pointer to Integer Descriptor Engine context. It must be created by function ::SimdDescrIntInit and released by function ::SimdRelease.
+        \param [in] a - a pointer to integer descriptor.
+        \param [out] norm - a pointer to result 32-bit float norm.
+    */
+    SIMD_API void SimdDescrIntVectorNorm(const void* context, const uint8_t* a, float* norm);
 
     /*! @ingroup deinterleave_conversion
 
@@ -7439,9 +7594,9 @@ extern "C"
     */
     SIMD_API void SimdSynetMish32f(const float* src, size_t size, const float* threshold, float* dst);
 
-    /*! @ingroup synet_other
+    /*! @ingroup synet_normalize
 
-        \fn void void SimdSynetNormalizeLayerForward(const float* src, size_t batch, size_t channels, size_t spatial, const float* scale, const float* eps, SimdBool acrossSpatial, SimdTensorFormatType format, float* buf, float* dst);
+        \fn void SimdSynetNormalizeLayerForward(const float* src, size_t batch, size_t channels, size_t spatial, const float* scale, const float* eps, SimdBool acrossSpatial, SimdTensorFormatType format, float* buf, float* dst);
 
         \short Performs forward propagation of NormalizeLayer.
 
@@ -7473,6 +7628,49 @@ extern "C"
     */
     SIMD_API void SimdSynetNormalizeLayerForward(const float* src, size_t batch, size_t channels, size_t spatial,
         const float* scale, const float* eps, SimdBool acrossSpatial, SimdTensorFormatType format, float* buf, float* dst);
+
+    /*! @ingroup synet_normalize
+
+        \fn void SimdSynetNormalizeLayerForwardV2(const float* src, size_t batch, size_t channels, size_t spatial, const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
+
+        \short Performs forward propagation of NormalizeLayer (Version 2).
+
+        Algorithm's details:
+        \verbatim
+        for(b = 0; b < batch; ++b)
+            for(s = 0; s < spatial; ++s)
+            {
+                sum = 0;
+                for c = 0; c < channels; ++c)
+                    sum += src[b, s, c];
+                mean = sum / channels;
+                for (c = 0; c < channels; ++c)
+                    dst[b, s, c] = src[b, s, c] - mean;
+
+                sqsum = 0;
+                for (c = 0; c < channels; ++c)
+                    sqsum += Square(dst[b, s, c]);
+                norm = 1 / Sqrt(sqsum / channels + eps);
+                for (c = 0; c < channels; ++c)
+                    dst[b, s, c] = dst[b, s, c] * norm * scale[c] + shift[c];
+            }
+        \endverbatim
+
+        \note This function is used in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+
+        \param [in] src - a pointer to the input 32-bit float tensor.
+        \param [in] batch - a batch size of input and output tensor.
+        \param [in] channels - a number of channels in input and output tensor.
+        \param [in] spatial - a spatial size (height*width) of input and output tensor.
+        \param [in] scale - an array with scale parameters. The size of the array is equal to channels.
+        \param [in] shift - an array with shift parameters. The size of the array is equal to channels.
+        \param [in] eps - a pointer to epsilon parameter. It is used to prevent division by zero.
+        \param [in] format - a format of input and output tensor. It can be ::SimdTensorFormatNchw, ::SimdTensorFormatNhwc.
+        \param [out] buf - a pointer to external temporary buffer. The size of the buffer must be equal to spatial. Can be NULL (it causes usage of internal buffer).
+        \param [out] dst - a pointer to the output 32-bit float tensor.
+    */
+    SIMD_API void SimdSynetNormalizeLayerForwardV2(const float* src, size_t batch, size_t channels, size_t spatial, 
+        const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
 
     /*! @ingroup synet_permute
 

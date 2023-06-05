@@ -161,6 +161,14 @@ namespace Test
     TEST_ADD_GROUP_A0(Crc32);
     TEST_ADD_GROUP_A0(Crc32c);
 
+    TEST_ADD_GROUP_A0(DescrIntEncode32f);
+    TEST_ADD_GROUP_A0(DescrIntEncode16f);
+    TEST_ADD_GROUP_A0(DescrIntDecode32f);
+    TEST_ADD_GROUP_A0(DescrIntDecode16f);
+    TEST_ADD_GROUP_A0(DescrIntCosineDistance);
+    TEST_ADD_GROUP_A0(DescrIntCosineDistancesMxNa);
+    TEST_ADD_GROUP_A0(DescrIntCosineDistancesMxNp);
+
     TEST_ADD_GROUP_A0(DeinterleaveUv);
     TEST_ADD_GROUP_A0(DeinterleaveBgr);
     TEST_ADD_GROUP_A0(DeinterleaveBgra);
@@ -406,6 +414,7 @@ namespace Test
     TEST_ADD_GROUP_A0(SynetMergedConvolution32fForward);
 
     TEST_ADD_GROUP_A0(SynetNormalizeLayerForward);
+    TEST_ADD_GROUP_A0(SynetNormalizeLayerForwardV2);
 
     TEST_ADD_GROUP_A0(SynetPermute);
 
@@ -584,7 +593,7 @@ namespace Test
 
         size_t testThreads, workThreads, testRepeats, testStatistics;
 
-        bool printAlign, printInternal;
+        bool printAlign, printInternal, checkCpp;
 
         Options(int argc, char* argv[])
             : mode(Auto)
@@ -595,6 +604,7 @@ namespace Test
             , testStatistics(0)
             , printAlign(false)
             , printInternal(true)
+            , checkCpp(false)
         {
             for (int i = 1; i < argc; ++i)
             {
@@ -691,6 +701,10 @@ namespace Test
                 {
                     REAL_IMAGE = arg.substr(4, arg.size() - 4);
                 }
+                else if (arg.find("-cc=") == 0)
+                {
+                    checkCpp = FromString<bool>(arg.substr(4, arg.size() - 4));
+                }
                 else
                 {
                     TEST_LOG_SS(Error, "Unknown command line options: '" << arg << "'!" << std::endl);
@@ -753,7 +767,8 @@ namespace Test
             } while (progress < 1.0 && !Test::Task::s_stopped);
             std::cout << std::endl << std::endl;
 
-            Test::Log::s_log.SetLevel(Test::Log::Info);
+            if (!Test::Task::s_stopped)
+                Test::Log::s_log.SetLevel(Test::Log::Info);
         }
         else
         {
@@ -849,6 +864,7 @@ namespace Test
         std::cout << "                  The image have to be placed in ./data/image directory." << std::endl << std::endl;
         std::cout << "    -tr=2         a number of test execution repeats." << std::endl;
         std::cout << "    -ts=1         to print statistics of time of tests execution." << std::endl;
+        std::cout << "    -cc=1         to check c++ API." << std::endl;
         return 0;
     }
 
@@ -878,12 +894,13 @@ namespace Test
 
 int main(int argc, char* argv[])
 {
-    //Test::CheckCpp();
-
     Test::Options options(argc, argv);
 
     if (options.help)
         return Test::PrintHelp();
+
+    if(options.checkCpp)
+        Test::CheckCpp();
 
     Test::Groups groups;
     for (const Test::Group& group : Test::g_groups)

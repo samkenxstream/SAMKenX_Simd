@@ -24,6 +24,7 @@
 * SOFTWARE.
 */
 #include "Simd/SimdCpu.h"
+#include "Simd/SimdMath.h"
 
 #include <vector>
 #ifdef SIMD_CPP_2011_ENABLE
@@ -32,7 +33,7 @@
 #include <sstream>
 #include <iostream>
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -70,7 +71,7 @@ namespace Simd
 #if defined(SIMD_X86_ENABLE) || defined(SIMD_X64_ENABLE)
         SIMD_INLINE bool CpuId(int eax, int ecx, unsigned int *registers)
         {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
             __cpuidex((int*)registers, eax, ecx);
 #elif (defined __GNUC__)
             if (__get_cpuid_max(0, NULL) < eax)
@@ -138,7 +139,7 @@ namespace Simd
         }
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
         typedef SYSTEM_LOGICAL_PROCESSOR_INFORMATION Info;
 
         void GetLogicalProcessorInformation(std::vector<Info> & info)
@@ -180,7 +181,9 @@ namespace Simd
                     return info[i].Cache.Size;
             return 0;
         }
+
 #elif defined(__GNUC__)
+
         size_t CpuSocketNumber()
         {
             uint32_t number = 0;

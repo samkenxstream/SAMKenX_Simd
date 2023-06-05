@@ -30,7 +30,7 @@
 #define SIMD_LIB_CPP
 #endif
 
-#if defined(WIN32) && !defined(SIMD_STATIC)
+#if defined(_WIN32) && !defined(SIMD_STATIC)
 
 #define SIMD_EXPORTS
 #ifndef NOMINMAX
@@ -50,7 +50,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
     }
     return TRUE;
 }
-#endif//WIN32
+#endif//_WIN32
 
 #include "Simd/SimdLib.h"
 
@@ -63,6 +63,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReasonForCall, LPVOID lpReserved)
 #include "Simd/SimdPerformance.h"
 #include "Simd/SimdEmpty.h"
 
+#include "Simd/SimdDescrInt.h"
 #include "Simd/SimdGaussianBlur.h"
 #include "Simd/SimdImageLoad.h"
 #include "Simd/SimdImageSave.h"
@@ -1915,6 +1916,75 @@ SIMD_API void SimdCopyFrame(const uint8_t * src, size_t srcStride, size_t width,
 {
     SIMD_EMPTY();
     Base::CopyFrame(src, srcStride, width, height, pixelSize, frameLeft, frameTop, frameRight, frameBottom, dst, dstStride);
+}
+
+SIMD_API void* SimdDescrIntInit(size_t size, size_t depth)
+{
+    SIMD_EMPTY();
+    typedef void* (*SimdDescrIntInitPtr) (size_t size, size_t depth);
+    const static SimdDescrIntInitPtr simdDescrIntInit = SIMD_FUNC3(DescrIntInit, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
+
+    return simdDescrIntInit(size, depth);
+}
+
+SIMD_API size_t SimdDescrIntEncodedSize(const void* context)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->EncodedSize();
+}
+
+SIMD_API size_t SimdDescrIntDecodedSize(const void* context)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->DecodedSize();
+}
+
+SIMD_API void SimdDescrIntEncode32f(const void* context, const float* src, uint8_t* dst)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->Encode32f(src, dst);
+}
+
+SIMD_API void SimdDescrIntEncode16f(const void* context, const uint16_t* src, uint8_t* dst)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->Encode16f(src, dst);
+}
+
+SIMD_API void SimdDescrIntDecode32f(const void* context, const uint8_t* src, float* dst)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->Decode32f(src, dst);
+}
+
+SIMD_API void SimdDescrIntDecode16f(const void* context, const uint8_t* src, uint16_t* dst)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->Decode16f(src, dst);
+}
+
+SIMD_API void SimdDescrIntCosineDistance(const void* context, const uint8_t* a, const uint8_t* b, float* distance)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->CosineDistance(a, b, distance);
+}
+
+SIMD_API void SimdDescrIntCosineDistancesMxNa(const void* context, size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->CosineDistancesMxNa(M, N, A, B, distances);
+}
+
+SIMD_API void SimdDescrIntCosineDistancesMxNp(const void* context, size_t M, size_t N, const uint8_t* A, const uint8_t* B, float* distances)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->CosineDistancesMxNp(M, N, A, B, distances);
+}
+
+SIMD_API void SimdDescrIntVectorNorm(const void* context, const uint8_t* a, float* norm)
+{
+    SIMD_EMPTY();
+    return ((Base::DescrInt*)context)->VectorNorm(a, norm);
 }
 
 SIMD_API void SimdDeinterleaveUv(const uint8_t * uv, size_t uvStride, size_t width, size_t height,
@@ -6082,9 +6152,9 @@ SIMD_API void SimdSynetDeconvolution32fForward(void * context, const float * src
 {
     SIMD_EMPTY();
 #if defined(SIMD_SYNET_ENABLE)
-    SynetDeconvolution32f * d = (SynetDeconvolution32f*)context;
-    SIMD_PERF_EXT(d);
-    d->Forward(src, buf, dst);
+    SynetDeconvolution32f * dec = (SynetDeconvolution32f*)context;
+    SIMD_PERF_EXT(dec);
+    dec->Forward(src, buf, dst);
 #else
     assert(0);
 #endif
@@ -6493,6 +6563,21 @@ SIMD_API void SimdSynetNormalizeLayerForward(const float* src, size_t batch, siz
     const static SimdSynetNormalizeLayerForwardPtr simdSynetNormalizeLayerForward = SIMD_FUNC3(SynetNormalizeLayerForward, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
 
     simdSynetNormalizeLayerForward(src, batch, channels, spatial, scale, eps, acrossSpatial, format, buf, dst);
+#else
+    assert(0);
+#endif
+}
+
+SIMD_API void SimdSynetNormalizeLayerForwardV2(const float* src, size_t batch, size_t channels, size_t spatial,
+    const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst)
+{
+    SIMD_EMPTY();
+#if defined(SIMD_SYNET_ENABLE)
+    typedef void(*SimdSynetNormalizeLayerForwardV2Ptr) (const float* src, size_t batch, size_t channels, size_t spatial,
+        const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
+    const static SimdSynetNormalizeLayerForwardV2Ptr simdSynetNormalizeLayerForwardV2 = SIMD_FUNC3(SynetNormalizeLayerForwardV2, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
+
+    simdSynetNormalizeLayerForwardV2(src, batch, channels, spatial, scale, shift, eps, format, buf, dst);
 #else
     assert(0);
 #endif

@@ -44,7 +44,7 @@ jobs:
       run: lscpu
 
     - name: Install toolchain
-      run: sudo apt-get -y install g++-arm-linux-gnueabihf
+      run: sudo apt-get update && sudo apt-get -y install g++-arm-linux-gnueabihf --fix-missing
 
     - name: Configure CMake
       run: cmake ./prj/cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DSIMD_TOOLCHAIN="arm-linux-gnueabihf-g++" -DSIMD_TARGET="arm"
@@ -66,7 +66,7 @@ jobs:
       run: lscpu
 
     - name: Install toolchain
-      run: sudo apt-get -y install g++-aarch64-linux-gnu
+      run: sudo apt-get update && sudo apt-get -y install g++-aarch64-linux-gnu --fix-missing
 
     - name: Configure CMake
       run: cmake ./prj/cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DSIMD_TOOLCHAIN="aarch64-linux-gnu-g++" -DSIMD_TARGET="aarch64"
@@ -88,7 +88,7 @@ jobs:
       run: lscpu
 
     - name: Install toolchain
-      run: sudo apt-get -y install g++-powerpc-linux-gnu
+      run: sudo apt-get update && sudo apt-get -y install g++-powerpc-linux-gnu --fix-missing
 
     - name: Configure CMake
       run: cmake ./prj/cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DSIMD_TOOLCHAIN="powerpc-linux-gnu-g++" -DSIMD_TARGET="ppc64"
@@ -121,3 +121,65 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ./Test "-r=.." -m=a -tt=$(nproc) "-ot=log_${{matrix.build_type}}.txt" -ts=10
+
+  build_and_test_gcc_12:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Host properties
+      run: lscpu
+
+    - name: Install toolchain
+      run: sudo apt-get -y install g++-12
+
+    - name: Configure CMake
+      run: cmake ./prj/cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DSIMD_TOOLCHAIN="g++-12" -DSIMD_TARGET="" -DSIMD_AVX512VNNI=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --parallel$(nproc)
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ./Test "-r=.." -m=a -tt=$(nproc) "-ot=log_${{matrix.build_type}}.txt" -ts=10
+
+  build_and_test_mingw:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup MSYS
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: git mingw-w64-ucrt-x86_64-gcc git make
+        pacboy: toolchain:p cmake:p ninja:p
+
+    - name: Host properties
+      run: wmic cpu get /format:value
+
+    - name: Configure CMake
+      run: cmake ./prj/cmake -B build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DSIMD_TARGET="x86_64" -DSIMD_GET_VERSION=OFF
+
+    - name: Build
+      run: cmake --build build --config ${{matrix.build_type}} --parallel2
+
+    - name: Test
+      working-directory: build
+      run: ./Test.exe "-r=.." -m=a -tt=2 -ts=10

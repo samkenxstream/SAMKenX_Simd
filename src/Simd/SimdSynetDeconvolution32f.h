@@ -161,7 +161,7 @@ namespace Simd
         }
 
 #if defined(SIMD_PERFORMANCE_STATISTIC) && (defined(NDEBUG) || defined(SIMD_PERF_STAT_IN_DEBUG))
-        Base::PerformanceMeasurer* Perf(const String& func);
+        Base::PerformanceMeasurer* Perf(const char * func);
 #endif
 
         const char * Info() const
@@ -250,6 +250,9 @@ namespace Simd
         public:
             SynetDeconvolution32fGemmNN(const DeconvParam32f & p);
             virtual String Ext() const { return "Sse41"; }
+
+        protected:
+            virtual void RowToImg(const float* src, float* dst);
         };
 
         class SynetDeconvolution32fNhwcDirect2x2 : public Base::SynetDeconvolution32fNhwcDirect2x2
@@ -273,6 +276,9 @@ namespace Simd
         public:
             SynetDeconvolution32fGemmNN(const DeconvParam32f & p);
             virtual String Ext() const { return "Avx"; }
+
+        protected:
+            virtual void RowToImg(const float* src, float* dst);
         };
 
         class SynetDeconvolution32fNhwcDirect2x2 : public Sse41::SynetDeconvolution32fNhwcDirect2x2
@@ -315,6 +321,9 @@ namespace Simd
         public:
             SynetDeconvolution32fGemmNN(const DeconvParam32f & p);
             virtual String Ext() const { return "Avx512bw"; }
+
+        protected:
+            virtual void RowToImg(const float* src, float* dst);
         };
 
         class SynetDeconvolution32fNhwcDirect2x2 : public Avx2::SynetDeconvolution32fNhwcDirect2x2

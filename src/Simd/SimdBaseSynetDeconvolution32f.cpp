@@ -32,7 +32,7 @@ namespace Simd
 #if defined(SIMD_SYNET_ENABLE)
 
 #if defined(SIMD_PERFORMANCE_STATISTIC) && (defined(NDEBUG) || defined(SIMD_PERF_STAT_IN_DEBUG))
-    Base::PerformanceMeasurer * SynetDeconvolution32f::Perf(const String& func)
+    Base::PerformanceMeasurer * SynetDeconvolution32f::Perf(const char* func)
     {
         if (_perf == NULL)
             _perf = Simd::Base::PerformanceMeasurerStorage::s_storage.Get(func, Param().Info() + " " + Desc(), Param().Flop());
@@ -183,11 +183,12 @@ namespace Simd
                     }
                     if (!_is1x1)
                     {
+                        //SIMD_PERF_BEG("RowToImg");
                         if (_param.trans)
                             RowToImg(tmp, dst);
                         else
                             ColToImg(tmp, dst);
-                    }                    
+                    }   
                     _biasAndActivation(_bias, p.dstC, p.dstH*p.dstW, p.activation, _params, p.trans, dst);
                     src += _sizeS;
                     dst += _sizeD;
