@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2021 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -154,19 +154,23 @@ namespace Simd
 
             virtual bool FromStream();
 
+            typedef void (*DecodeLinePtr)(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst);
+            typedef void (*ExpandPalettePtr)(const uint8_t* src, size_t size, int outN, const uint8_t* palette, uint8_t* dst);
             typedef void (*ConverterPtr)(const uint8_t* src, size_t width, size_t height, size_t srcStride, uint8_t* dst, size_t dstStride);
 
         protected:
 
+            DecodeLinePtr _decodeLine[7];
+            ExpandPalettePtr _expandPalette;
             ConverterPtr _converter;
-            virtual void SetConverter(int channels);
+            virtual void SetConverter();
 
         private:
             bool _first, _hasTrans, _iPhone;
-            uint32_t _width, _height, _channels;
+            uint32_t _width, _height, _channels, _outN;
             uint16_t _tc16[3];
             uint8_t _depth, _color, _interlace, _paletteChannels, _tc[3];
-            Array8u _palette, _idat;
+            Array8u _palette, _idat, _buffer;
 
             struct Chunk
             {
@@ -185,6 +189,10 @@ namespace Simd
             bool ReadTransparency(const Chunk& chunk);
             bool ReadData(const Chunk& chunk);
             InputMemoryStream MergedDataStream();
+            bool CreateImage(const uint8_t* data, size_t size);
+            bool CreateImageRaw(const uint8_t* data, uint32_t size, uint32_t width, uint32_t height);
+            void ExpandPalette();
+            void ConvertImage();
         };
 
         class ImageJpegLoader : public ImageLoader
@@ -243,6 +251,14 @@ namespace Simd
         {
         public:
             ImagePngLoader(const ImageLoaderParam& param);
+
+            virtual bool FromStream();
+        };
+
+        class ImageJpegLoader : public Base::ImageJpegLoader
+        {
+        public:
+            ImageJpegLoader(const ImageLoaderParam& param);
 
             virtual bool FromStream();
         };

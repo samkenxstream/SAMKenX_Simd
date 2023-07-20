@@ -41,19 +41,21 @@ namespace Simd
 
     \fn void PrintInfo(std::ostream & os)
 
-    \short Prints information about %Simd Library and CPU properties.
+    \short Prints information about %Simd Library and CPU.
 
     \param [in, out] os - output stream.
     */
     SIMD_INLINE void PrintInfo(std::ostream & os)
     {
         os << "Simd Library: " << SimdVersion();
+        os << "; CPU: " << SimdCpuDesc(SimdCpuDescModel);
         os << "; System Sockets: " << SimdCpuInfo(SimdCpuInfoSockets);
         os << ", Cores: " << SimdCpuInfo(SimdCpuInfoCores);
         os << ", Threads: " << SimdCpuInfo(SimdCpuInfoThreads);
         os << "; Cache L1D: " << SimdCpuInfo(SimdCpuInfoCacheL1) / 1024 << " KB";
         os << ", L2: " << SimdCpuInfo(SimdCpuInfoCacheL2) / 1024 << " KB";
         os << ", L3: " << SimdCpuInfo(SimdCpuInfoCacheL3) / 1024 << " KB";
+        os << ", RAM: " << SimdCpuInfo(SimdCpuInfoRam) / 1024 / 1024 << " MB";
         os << "; Available SIMD:";
         os << (SimdCpuInfo(SimdCpuInfoAmx) ? " AMX" : "");
         os << (SimdCpuInfo(SimdCpuInfoAvx512bf16) ? " AVX-512BF16" : "");

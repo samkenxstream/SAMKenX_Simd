@@ -221,6 +221,14 @@ typedef enum
 } SimdConvolutionActivationType;
 
 /*! @ingroup c_types
+    Describes type of description which can return function ::SimdCpuDesc.
+*/
+typedef enum
+{
+    SimdCpuDescModel, /*!< A CPU model name. */
+} SimdCpuDescType;
+
+/*! @ingroup c_types
     Describes type of information which can return function ::SimdCpuInfo.
 */
 typedef enum
@@ -231,6 +239,7 @@ typedef enum
     SimdCpuInfoCacheL1, /*!< A size of level 1 data cache. */
     SimdCpuInfoCacheL2, /*!< A size of level 2 cache. */
     SimdCpuInfoCacheL3, /*!< A size of level 3 cache. */
+    SimdCpuInfoRam, /*!< A size of physical RAM. */
     SimdCpuInfoSse41, /*!< Availability of SSE4.1 (x86). */
     SimdCpuInfoAvx, /*!< Availability of AVX (x86). */
     SimdCpuInfoAvx2, /*!< Availability of AVX2 (x86). */
@@ -684,9 +693,34 @@ extern "C"
 
     /*! @ingroup info
 
-        \fn size_t SimdCpuInfo(SimdCpuInfoType type);
+        \fn const char* SimdCpuDesc(SimdCpuDescType type);
 
-        \short Gets info about CPU and %Simd Library.
+        \short Gets description of CPU and %Simd Library.
+
+        \note See enumeration ::SimdCpuDescType.
+
+        Using example:
+        \verbatim
+        #include "Simd/SimdLib.h"
+        #include <iostream>
+
+        int main()
+        {
+            std::cout << "CPU: " << SimdCpuDesc(SimdCpuDescModel) << std::endl;
+            return 0;
+        }
+        \endverbatim
+
+        \param [in] type - a type of required description.
+        \return a value which contains description of CPU and %Simd Library.
+    */
+    SIMD_API const char* SimdCpuDesc(SimdCpuDescType type);
+
+    /*! @ingroup info
+
+        \fn uint64_t SimdCpuInfo(SimdCpuInfoType type);
+
+        \short Gets information about CPU and %Simd Library.
 
         \note See enumeration ::SimdCpuInfoType.
 
@@ -697,12 +731,13 @@ extern "C"
 
         int main()
         {
-            std::cout << "Sockets : " << SimdCpuInfo(SimdCpuInfoSockets) << std::endl;
-            std::cout << "Cores : " << SimdCpuInfo(SimdCpuInfoCores) << std::endl;
-            std::cout << "Threads : " << SimdCpuInfo(SimdCpuInfoThreads) << std::endl;
-            std::cout << "L1D Cache : " << SimdCpuInfo(SimdCpuInfoCacheL1) / 1024  << " KB" << std::endl;
-            std::cout << "L2 Cache : " << SimdCpuInfo(SimdCpuInfoCacheL2) / 1024  << " KB" << std::endl;
-            std::cout << "L3 Cache : " << SimdCpuInfo(SimdCpuInfoCacheL3) / 1024  << " KB" << std::endl;
+            std::cout << "Sockets: " << SimdCpuInfo(SimdCpuInfoSockets) << std::endl;
+            std::cout << "Cores: " << SimdCpuInfo(SimdCpuInfoCores) << std::endl;
+            std::cout << "Threads: " << SimdCpuInfo(SimdCpuInfoThreads) << std::endl;
+            std::cout << "L1D Cache: " << SimdCpuInfo(SimdCpuInfoCacheL1) / 1024  << " KB" << std::endl;
+            std::cout << "L2 Cache: " << SimdCpuInfo(SimdCpuInfoCacheL2) / 1024  << " KB" << std::endl;
+            std::cout << "L3 Cache: " << SimdCpuInfo(SimdCpuInfoCacheL3) / 1024  << " KB" << std::endl;
+            std::cout << "RAM: " << SimdCpuInfo(SimdCpuInfoRam) / 1024 / 1024 << " MB" << std::endl;
             std::cout << "SSE4.1: " << (SimdCpuInfo(SimdCpuInfoSse41) ? "Yes" : "No") << std::endl;
             std::cout << "AVX: " << (SimdCpuInfo(SimdCpuInfoAvx) ? "Yes" : "No") << std::endl;
             std::cout << "AVX2: " << (SimdCpuInfo(SimdCpuInfoAvx2) ? "Yes" : "No") << std::endl;
@@ -720,7 +755,7 @@ extern "C"
         \param [in] type - a type of required information.
         \return a value which contains information about CPU and %Simd Library.
     */
-    SIMD_API size_t SimdCpuInfo(SimdCpuInfoType type);
+    SIMD_API uint64_t SimdCpuInfo(SimdCpuInfoType type);
 
     /*! @ingroup info
 
@@ -2469,11 +2504,8 @@ extern "C"
 
         \short Initilizes Integer Descriptor Engine.
 
-        All images must have the same width and height.
-        This function used for NV12 to YUV420P conversion.
-
         \param [in] size - a length of original (32-bit or 16-bit) float descriptor. It be multiple of 8. Also it must be less or equal than 32768.
-        \param [in] depth - a number of bits in encoded integer descriptor. Supported values: 6, 7, 8.
+        \param [in] depth - a number of bits in encoded integer descriptor. Supported values: 4, 5, 6, 7, 8.
         \return a pointer to Integer Descriptor Engine context. On error it returns NULL. It must be released with using of function ::SimdRelease.
                 This pointer is used in functions ::SimdDescrIntEncodedSize, ::SimdDescrIntDecodedSize, 
                 ::SimdDescrIntEncode32f, ::SimdDescrIntEncode16f, ::SimdDescrIntDecode32f, ::SimdDescrIntDecode16f, 
@@ -7670,6 +7702,49 @@ extern "C"
         \param [out] dst - a pointer to the output 32-bit float tensor.
     */
     SIMD_API void SimdSynetNormalizeLayerForwardV2(const float* src, size_t batch, size_t channels, size_t spatial, 
+        const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
+
+    /*! @ingroup synet_normalize
+
+        \fn void SimdSynetNormalizeLayerForwardV3(const float* src, size_t batch, size_t channels, size_t spatial, const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
+
+        \short Performs forward propagation of NormalizeLayer (Version 3).
+
+        Algorithm's details:
+        \verbatim
+        for(b = 0; b < batch; ++b)
+            for(c = 0; c < channels; ++c)
+            {
+                sum = 0;
+                for (s = 0; s < spatial; ++s)
+                    sum += src[b, ñ, s];
+                mean = sum / spatial;
+                for (s = 0; s < spatial; ++s)
+                    dst[b, c, s] = src[b, c, s] - mean;
+
+                sqsum = 0;
+                for (s = 0; s < spatial; ++s)
+                    sqsum += Square(dst[b, c, s]);
+                norm = 1 / Sqrt(sqsum / spatial + eps);
+                for (s = 0; s < spatial; ++s)
+                    dst[b, c, s] = dst[b, c, s] * norm * scale[c] + shift[c];
+            }
+        \endverbatim
+
+        \note This function is used in <a href="http://github.com/ermig1979/Synet">Synet Framework</a>.
+
+        \param [in] src - a pointer to the input 32-bit float tensor.
+        \param [in] batch - a batch size of input and output tensor.
+        \param [in] channels - a number of channels in input and output tensor.
+        \param [in] spatial - a spatial size (height*width) of input and output tensor.
+        \param [in] scale - an array with scale parameters. The size of the array is equal to channels.
+        \param [in] shift - an array with shift parameters. The size of the array is equal to channels.
+        \param [in] eps - a pointer to epsilon parameter. It is used to prevent division by zero.
+        \param [in] format - a format of input and output tensor. It can be ::SimdTensorFormatNchw, ::SimdTensorFormatNhwc.
+        \param [out] buf - a pointer to external temporary buffer. The size of the buffer must be equal to channels. Can be NULL (it causes usage of internal buffer).
+        \param [out] dst - a pointer to the output 32-bit float tensor.
+    */
+    SIMD_API void SimdSynetNormalizeLayerForwardV3(const float* src, size_t batch, size_t channels, size_t spatial,
         const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
 
     /*! @ingroup synet_permute

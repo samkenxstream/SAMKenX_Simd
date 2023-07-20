@@ -35,6 +35,10 @@
     <ClCompile Include="..\..\src\Simd\SimdSse41Crc32.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41Deinterleave.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41DescrInt.cpp" />
+    <ClCompile Include="..\..\src\Simd\SimdSse41DescrIntDec.cpp" />
+    <ClCompile Include="..\..\src\Simd\SimdSse41DescrIntEnc.cpp" />
+    <ClCompile Include="..\..\src\Simd\SimdSse41DescrIntCdd.cpp" />
+    <ClCompile Include="..\..\src\Simd\SimdSse41DescrIntCdu.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41Detection.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41EdgeBackground.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41Fill.cpp" />
@@ -51,6 +55,7 @@
     <ClCompile Include="..\..\src\Simd\SimdSse41Hog.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41HogLite.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41ImageLoad.cpp" />
+    <ClCompile Include="..\..\src\Simd\SimdSse41ImageLoadJpeg.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41ImageLoadPng.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41ImageSave.cpp" />
     <ClCompile Include="..\..\src\Simd\SimdSse41ImageSaveJpeg.cpp" />
@@ -165,6 +170,7 @@
     <ClInclude Include="..\..\src\Simd\SimdGaussianBlur.h" />
     <ClInclude Include="..\..\src\Simd\SimdGemm.h" />
     <ClInclude Include="..\..\src\Simd\SimdImageLoad.h" />
+    <ClInclude Include="..\..\src\Simd\SimdImageLoadJpeg.h" />
     <ClInclude Include="..\..\src\Simd\SimdImageSave.h" />
     <ClInclude Include="..\..\src\Simd\SimdImageSaveJpeg.h" />
     <ClInclude Include="..\..\src\Simd\SimdImageSavePng.h" />

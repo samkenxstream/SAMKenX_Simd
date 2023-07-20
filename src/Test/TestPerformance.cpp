@@ -29,7 +29,9 @@
 #include "Test/TestHtml.h"
 
 #if defined(_MSC_VER)
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #elif defined(__GNUC__)
 #include <sys/time.h>
@@ -295,7 +297,7 @@ namespace Test
             AddToFunction(src, dst.avx512vnni, enable.avx512vnni);
         if (desc.find("Simd::Avx512bf16::") != std::string::npos)
             AddToFunction(src, dst.avx512bf16, enable.avx512bf16);
-        if (desc.find("Simd::Amx::") != std::string::npos)
+        if (desc.find("Simd::AmxBf16::") != std::string::npos)
             AddToFunction(src, dst.amx, enable.amx);
         if (desc.find("Simd::Vmx::") != std::string::npos)
             AddToFunction(src, dst.vmx, enable.vmx);
@@ -438,41 +440,38 @@ namespace Test
         return "Simd Library Performance Report:";
     }
 
+#if defined(_WIN32)
+    static std::string Execute(const char* cmd) 
+    {
+        std::shared_ptr<FILE> pipe(_popen(cmd, "r"), _pclose);
+        if (!pipe) 
+            return "ERROR";
+        char buffer[260];
+        std::string result = "";
+        while (!feof(pipe.get())) 
+        {
+            if (fgets(buffer, sizeof(buffer), pipe.get()) != NULL)
+                result += buffer;
+        }
+        return result;
+    }
+#endif
+
     static String TestInfo(size_t threads)
     {
         std::stringstream info;
         info << "Execution time: " + GetCurrentDateTimeString();
         info << ". Test threads: " << threads;
-        info << ". Simd version: " << SimdVersion() << ".";
-#if defined(__linux__)
-        String cpu = "Unknown", mem = "Unknown";
-        ::FILE* c = ::popen("lscpu | grep 'Model name:' | sed -r 's/Model name:\\s{1,}//g'", "r");
-        if (c)
-        {
-            char buf[PATH_MAX];
-            while (::fgets(buf, PATH_MAX, c));
-            cpu = buf;
-            cpu = cpu.substr(0, cpu.find('\n'));
-            ::pclose(c);
-        }
-        ::FILE* m = ::popen("grep MemTotal /proc/meminfo | awk '{printf \"%.1f\", $2 / 1024 / 1024 }'", "r");
-        if (m)
-        {
-            char buf[PATH_MAX];
-            while (::fgets(buf, PATH_MAX, m));
-            mem = buf;
-            mem = mem.substr(0, mem.find('\n'));
-            ::pclose(m);
-        }
+        info << ". Simd version: " << SimdVersion();
+        info << ". CPU: " << SimdCpuDesc(SimdCpuDescModel) << ".";
         info << std::endl;
-        info << "CPU: " << cpu;
-        info << "; Sockets: " << SimdCpuInfo(SimdCpuInfoSockets);
+        info << "Sockets: " << SimdCpuInfo(SimdCpuInfoSockets);
         info << ", Cores: " << SimdCpuInfo(SimdCpuInfoCores);
         info << ", Threads: " << SimdCpuInfo(SimdCpuInfoThreads);
         info << "; Cache L1D: " << SimdCpuInfo(SimdCpuInfoCacheL1) / 1024 << " KB";
         info << ", L2: " << SimdCpuInfo(SimdCpuInfoCacheL2) / 1024 << " KB";
-        info << ", L3: " << SimdCpuInfo(SimdCpuInfoCacheL3) / 1024 / 1024 << " MB";
-        info << ", RAM: " << mem << " GB";
+        info << ", L3: " << ToString(double(SimdCpuInfo(SimdCpuInfoCacheL3) / 1024) / 1024, 1, false) << " MB";
+        info << ", RAM: " << ToString(double(SimdCpuInfo(SimdCpuInfoRam)) / 1024 / 1024 / 1024, 1, false) << " GB";
         info << "; SIMD:";
         info << (SimdCpuInfo(SimdCpuInfoAmx) ? " AMX" : "");
         info << (SimdCpuInfo(SimdCpuInfoAvx512bf16) ? " AVX-512BF16" : "");
@@ -485,7 +484,7 @@ namespace Test
         info << (SimdCpuInfo(SimdCpuInfoVsx) ? " VSX" : "");
         info << (SimdCpuInfo(SimdCpuInfoNeon) ? " NEON" : "");
         info << ".";
-#endif
+
         return info.str();
     }
 

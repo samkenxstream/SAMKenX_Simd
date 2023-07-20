@@ -23,6 +23,7 @@
 * SOFTWARE.
 */
 #include "Simd/SimdImageLoad.h"
+#include "Simd/SimdImageLoadPng.h"
 #include "Simd/SimdImageSavePng.h"
 #include "Simd/SimdArray.h"
 #include "Simd/SimdCpu.h"
@@ -32,12 +33,6 @@ namespace Simd
 {
     namespace Base
     {
-        SIMD_INLINE int PngError(const char* str, const char* stub)
-        {
-            std::cout << "PNG load error: " << str << ", " << stub << "!" << std::endl;
-            return 0;
-        }
-
         namespace Zlib
         {
             const size_t ZFAST_BITS = 9;
@@ -65,7 +60,7 @@ namespace Simd
                     sizes[0] = 0;
                     for (i = 1; i < 16; ++i)
                         if (sizes[i] > (1 << i))
-                            return PngError("bad sizes", "Corrupt PNG");
+                            return CorruptPngError("bad sizes");
                     code = 0;
                     for (i = 1; i < 16; ++i)
                     {
@@ -74,12 +69,12 @@ namespace Simd
                         firstSymbol[i] = (uint16_t)k;
                         code = (code + sizes[i]);
                         if (sizes[i] && code - 1 >= (1 << i))
-                            return PngError("bad codelengths", "Corrupt PNG");
-                        maxCode[i] = code << (16 - i); // preshift for inner loop
+                            return CorruptPngError("bad codelengths");
+                        maxCode[i] = code << (16 - i);
                         code <<= 1;
                         k += sizes[i];
                     }
-                    maxCode[16] = 0x10000; // sentinel
+                    maxCode[16] = 0x10000;
                     for (i = 0; i < num; ++i)
                     {
                         int s = sizelist[i];
@@ -163,7 +158,7 @@ namespace Simd
                     if (z < 256)
                     {
                         if (z < 0)
-                            return PngError("bad huffman code", "Corrupt PNG");
+                            return CorruptPngError("bad huffman code");
                         if (dst >= end)
                         {
                             os.Reserve(end - beg + 1);
@@ -187,12 +182,12 @@ namespace Simd
                             len += (int)is.ReadBits(zlengthExtra[z]);
                         z = ZhuffmanDecode(is, zDistance);
                         if (z < 0)
-                            return PngError("bad huffman code", "Corrupt PNG");
+                            return CorruptPngError("bad huffman code");
                         dist = zdistBase[z];
                         if (zdistExtra[z])
                             dist += (int)is.ReadBits(zdistExtra[z]);
                         if (dst - beg < dist)
-                            return PngError("bad dist", "Corrupt PNG");
+                            return CorruptPngError("bad dist");
                         if (dst + len > end)
                         {
                             os.Reserve(dst - beg + len);
@@ -258,7 +253,7 @@ namespace Simd
                 {
                     int c = ZhuffmanDecode(is, z_codelength);
                     if (c < 0 || c >= 19)
-                        return PngError("bad codelengths", "Corrupt PNG");
+                        return CorruptPngError("bad codelengths");
                     if (c < 16)
                         lencodes[n++] = (uint8_t)c;
                     else
@@ -267,7 +262,7 @@ namespace Simd
                         if (c == 16)
                         {
                             c = (int)is.ReadBits(2) + 3;
-                            if (n == 0) return PngError("bad codelengths", "Corrupt PNG");
+                            if (n == 0) return CorruptPngError("bad codelengths");
                             fill = lencodes[n - 1];
                         }
                         else if (c == 17)
@@ -275,15 +270,15 @@ namespace Simd
                         else if (c == 18)
                             c = (int)is.ReadBits(7) + 11;
                         else
-                            return PngError("bad codelengths", "Corrupt PNG");
+                            return CorruptPngError("bad codelengths");
                         if (ntot - n < c)
-                            return PngError("bad codelengths", "Corrupt PNG");
+                            return CorruptPngError("bad codelengths");
                         memset(lencodes + n, fill, c);
                         n += c;
                     }
                 }
                 if (n != ntot)
-                    return PngError("bad codelengths", "Corrupt PNG");
+                    return CorruptPngError("bad codelengths");
                 if (!zLength.Build(lencodes, hlit))
                     return 0;
                 if (!zDistance.Build(lencodes + hlit, hdist))
@@ -296,9 +291,9 @@ namespace Simd
                 is.ClearBits();
                 uint16_t len, nlen;
                 if (!is.Read16u(len) || !is.Read16u(nlen) || nlen != (len ^ 0xffff))
-                    return PngError("zlib corrupt", "Corrupt PNG");
+                    return CorruptPngError("zlib corrupt");
                 if (!os.Write(is, len))
-                    return PngError("read past buffer", "Corrupt PNG");
+                    return CorruptPngError("read past buffer");
                 return 1;
             }
 
@@ -306,13 +301,13 @@ namespace Simd
             {
                 uint8_t cmf, flg;
                 if (!(is.Read8u(cmf) && is.Read8u(flg)))
-                    return PngError("bad zlib header", "Corrupt PNG");
+                    return CorruptPngError("bad zlib header");
                 if ((int(cmf) * 256 + flg) % 31 != 0)
-                    return PngError("bad zlib header", "Corrupt PNG");
+                    return CorruptPngError("bad zlib header");
                 if (flg & 32)
-                    return PngError("no preset dict", "Corrupt PNG");
+                    return CorruptPngError("no preset dict");
                 if ((cmf & 15) != 8)
-                    return PngError("bad compression", "Corrupt PNG");
+                    return CorruptPngError("bad compression");
                 return 1;
             }
 
@@ -373,307 +368,216 @@ namespace Simd
             }
         }
 
-#define PNG__BYTECAST(x)  ((uint8_t) ((x) & 255))  // truncate int to byte without warnings
-
-        struct Png
-        {
-            uint32_t width, height;
-            int channels, img_out_n;
-            uint8_t depth;
-            Array8u buf0, buf1;
-
-            SIMD_INLINE int Swap()
-            {
-                buf0.Swap(buf1);
-                return 1;
-            }
-        };
-
-        enum 
-        {
-            PNG__F_none = 0,
-            PNG__F_sub = 1,
-            PNG__F_up = 2,
-            PNG__F_avg = 3,
-            PNG__F_paeth = 4,
-            PNG__F_avg_first,
-            PNG__F_paeth_first
-        };
-
-        static uint8_t FirstRowFilter[5] =
-        {
-           PNG__F_none,
-           PNG__F_sub,
-           PNG__F_none,
-           PNG__F_avg_first,
-           PNG__F_paeth_first
-        };
+        //-------------------------------------------------------------------------------------------------
 
         static const uint8_t DepthScaleTable[9] = { 0, 0xff, 0x55, 0, 0x11, 0,0,0, 0x01 };
 
-        static int CreatePngImageRaw(Png& a, const uint8_t* raw, uint32_t raw_len, int out_n, uint32_t x, uint32_t y, int depth, int color)
+        static void DecodeLine0(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
         {
-            int bytes = (depth == 16 ? 2 : 1);
-            uint32_t i, j, stride = x * out_n * bytes;
-            uint32_t img_len, img_width_bytes;
-            int k;
-            int img_n = a.channels;
-
-            int output_bytes = out_n * bytes;
-            int filter_bytes = img_n * bytes;
-            int width = x;
-
-            assert(out_n == a.channels || out_n == a.channels + 1);
-
-            a.buf0.Resize(x * y * output_bytes);
-            if (a.buf0.Empty()) 
-                return PngError("outofmem", "Out of memory");
-
-            img_width_bytes = (img_n * x * depth + 7) >> 3;
-            img_len = (img_width_bytes + 1) * y;
-
-            if (raw_len < img_len) 
-                return PngError("not enough pixels", "Corrupt PNG");
-
-            for (j = 0; j < y; ++j) 
+            if (srcN == dstN)
+                memcpy(dst, curr, width * srcN);
+            else
             {
-                uint8_t* cur = a.buf0.data + stride * j;
-                uint8_t* prior;
-                int filter = *raw++;
-
-                if (filter > 4)
-                    return PngError("invalid filter", "Corrupt PNG");
-
-                if (depth < 8) 
+                for (int x = 0; x < width; ++x)
                 {
-                    if (img_width_bytes > x) 
-                        return PngError("invalid width", "Corrupt PNG");
-                    cur += x * out_n - img_width_bytes; // store output to the rightmost img_len bytes, so we can decode in place
-                    filter_bytes = 1;
-                    width = img_width_bytes;
-                }
-                prior = cur - stride; // bugfix: need to compute this after 'cur +=' computation above
-                if (j == 0) 
-                    filter = FirstRowFilter[filter];
-
-                for (k = 0; k < filter_bytes; ++k) 
-                {
-                    switch (filter) 
-                    {
-                    case PNG__F_none: cur[k] = raw[k]; break;
-                    case PNG__F_sub: cur[k] = raw[k]; break;
-                    case PNG__F_up: cur[k] = PNG__BYTECAST(raw[k] + prior[k]); break;
-                    case PNG__F_avg: cur[k] = PNG__BYTECAST(raw[k] + (prior[k] >> 1)); break;
-                    case PNG__F_paeth: cur[k] = PNG__BYTECAST(raw[k] + Paeth(0, prior[k], 0)); break;
-                    case PNG__F_avg_first: cur[k] = raw[k]; break;
-                    case PNG__F_paeth_first: cur[k] = raw[k]; break;
-                    }
-                }
-
-                if (depth == 8) 
-                {
-                    if (img_n != out_n)
-                        cur[img_n] = 255; // first pixel
-                    raw += img_n;
-                    cur += out_n;
-                    prior += out_n;
-                }
-                else if (depth == 16) 
-                {
-                    if (img_n != out_n) 
-                    {
-                        cur[filter_bytes] = 255; // first pixel top byte
-                        cur[filter_bytes + 1] = 255; // first pixel bottom byte
-                    }
-                    raw += filter_bytes;
-                    cur += output_bytes;
-                    prior += output_bytes;
-                }
-                else 
-                {
-                    raw += 1;
-                    cur += 1;
-                    prior += 1;
-                }
-                if (depth < 8 || img_n == out_n) 
-                {
-                    int nk = (width - 1) * filter_bytes;
-#define PNG__CASE(f) \
-             case f:     \
-                for (k=0; k < nk; ++k)
-                    switch (filter) {
-                    case PNG__F_none:         memcpy(cur, raw, nk); break;
-                        PNG__CASE(PNG__F_sub) { cur[k] = PNG__BYTECAST(raw[k] + cur[k - filter_bytes]); } break;
-                        PNG__CASE(PNG__F_up) { cur[k] = PNG__BYTECAST(raw[k] + prior[k]); } break;
-                        PNG__CASE(PNG__F_avg) { cur[k] = PNG__BYTECAST(raw[k] + ((prior[k] + cur[k - filter_bytes]) >> 1)); } break;
-                        PNG__CASE(PNG__F_paeth) { cur[k] = PNG__BYTECAST(raw[k] + Paeth(cur[k - filter_bytes], prior[k], prior[k - filter_bytes])); } break;
-                        PNG__CASE(PNG__F_avg_first) { cur[k] = PNG__BYTECAST(raw[k] + (cur[k - filter_bytes] >> 1)); } break;
-                        PNG__CASE(PNG__F_paeth_first) { cur[k] = PNG__BYTECAST(raw[k] + Paeth(cur[k - filter_bytes], 0, 0)); } break;
-                    }
-#undef PNG__CASE
-                    raw += nk;
-                }
-                else 
-                {
-                    assert(img_n + 1 == out_n);
-#define PNG__CASE(f) \
-             case f:     \
-                for (i=x-1; i >= 1; --i, cur[filter_bytes]=255,raw+=filter_bytes,cur+=output_bytes,prior+=output_bytes) \
-                   for (k=0; k < filter_bytes; ++k)
-                    switch (filter) {
-                        PNG__CASE(PNG__F_none) { cur[k] = raw[k]; } break;
-                        PNG__CASE(PNG__F_sub) { cur[k] = PNG__BYTECAST(raw[k] + cur[k - output_bytes]); } break;
-                        PNG__CASE(PNG__F_up) { cur[k] = PNG__BYTECAST(raw[k] + prior[k]); } break;
-                        PNG__CASE(PNG__F_avg) { cur[k] = PNG__BYTECAST(raw[k] + ((prior[k] + cur[k - output_bytes]) >> 1)); } break;
-                        PNG__CASE(PNG__F_paeth) { cur[k] = PNG__BYTECAST(raw[k] + Paeth(cur[k - output_bytes], prior[k], prior[k - output_bytes])); } break;
-                        PNG__CASE(PNG__F_avg_first) { cur[k] = PNG__BYTECAST(raw[k] + (cur[k - output_bytes] >> 1)); } break;
-                        PNG__CASE(PNG__F_paeth_first) { cur[k] = PNG__BYTECAST(raw[k] + Paeth(cur[k - output_bytes], 0, 0)); } break;
-                    }
-#undef PNG__CASE
-                    if (depth == 16) 
-                    {
-                        cur = a.buf0.data + stride * j;
-                        for (i = 0; i < x; ++i, cur += output_bytes) 
-                            cur[filter_bytes + 1] = 255;
-                    }
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i];
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    dst += dstN;
                 }
             }
-            if (depth < 8)
-            {
-                for (j = 0; j < y; ++j)
-                {
-                    uint8_t* cur = a.buf0.data + stride * j;
-                    const uint8_t* in = a.buf0.data + stride * j + x * out_n - img_width_bytes;
-                    uint8_t scale = (color == 0) ? DepthScaleTable[depth] : 1;
-                    if (depth == 4) 
-                    {
-                        for (k = x * img_n; k >= 2; k -= 2, ++in) 
-                        {
-                            *cur++ = scale * ((*in >> 4));
-                            *cur++ = scale * ((*in) & 0x0f);
-                        }
-                        if (k > 0) 
-                            *cur++ = scale * ((*in >> 4));
-                    }
-                    else if (depth == 2) 
-                    {
-                        for (k = x * img_n; k >= 4; k -= 4, ++in) 
-                        {
-                            *cur++ = scale * ((*in >> 6));
-                            *cur++ = scale * ((*in >> 4) & 0x03);
-                            *cur++ = scale * ((*in >> 2) & 0x03);
-                            *cur++ = scale * ((*in) & 0x03);
-                        }
-                        if (k > 0) 
-                            *cur++ = scale * ((*in >> 6));
-                        if (k > 1) 
-                            *cur++ = scale * ((*in >> 4) & 0x03);
-                        if (k > 2) 
-                            *cur++ = scale * ((*in >> 2) & 0x03);
-                    }
-                    else if (depth == 1)
-                    {
-                        for (k = x * img_n; k >= 8; k -= 8, ++in) 
-                        {
-                            *cur++ = scale * ((*in >> 7));
-                            *cur++ = scale * ((*in >> 6) & 0x01);
-                            *cur++ = scale * ((*in >> 5) & 0x01);
-                            *cur++ = scale * ((*in >> 4) & 0x01);
-                            *cur++ = scale * ((*in >> 3) & 0x01);
-                            *cur++ = scale * ((*in >> 2) & 0x01);
-                            *cur++ = scale * ((*in >> 1) & 0x01);
-                            *cur++ = scale * ((*in) & 0x01);
-                        }
-                        if (k > 0) *cur++ = scale * ((*in >> 7));
-                        if (k > 1) *cur++ = scale * ((*in >> 6) & 0x01);
-                        if (k > 2) *cur++ = scale * ((*in >> 5) & 0x01);
-                        if (k > 3) *cur++ = scale * ((*in >> 4) & 0x01);
-                        if (k > 4) *cur++ = scale * ((*in >> 3) & 0x01);
-                        if (k > 5) *cur++ = scale * ((*in >> 2) & 0x01);
-                        if (k > 6) *cur++ = scale * ((*in >> 1) & 0x01);
-                    }
-                    if (img_n != out_n) 
-                    {
-                        int q;
-                        cur = a.buf0.data + stride * j;
-                        if (img_n == 1) 
-                        {
-                            for (q = x - 1; q >= 0; --q)
-                            {
-                                cur[q * 2 + 1] = 255;
-                                cur[q * 2 + 0] = cur[q];
-                            }
-                        }
-                        else
-                        {
-                            assert(img_n == 3);
-                            for (q = x - 1; q >= 0; --q) 
-                            {
-                                cur[q * 4 + 3] = 255;
-                                cur[q * 4 + 2] = cur[q * 3 + 2];
-                                cur[q * 4 + 1] = cur[q * 3 + 1];
-                                cur[q * 4 + 0] = cur[q * 3 + 0];
-                            }
-                        }
-                    }
-                }
-            }
-            else if (depth == 16) 
-            {
-                uint8_t* cur = a.buf0.data;
-                uint16_t* cur16 = (uint16_t*)cur;
-                for (i = 0; i < x * y * out_n; ++i, cur16++, cur += 2)
-                    *cur16 = (cur[0] << 8) | cur[1];
-            }
-            return 1;
         }
 
-        static int CreatePngImage(Png& a, const uint8_t* image_data, uint32_t image_data_len, int out_n, int depth, int color, int interlaced)
+        static void DecodeLine1(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
         {
-            SIMD_PERF_FUNC();
-
-            int bytes = (depth == 16 ? 2 : 1);
-            int out_bytes = out_n * bytes;
-            if (!interlaced)
-                return CreatePngImageRaw(a, image_data, image_data_len, out_n, a.width, a.height, depth, color);
-
-            a.buf1.Resize(a.width * a.height * out_bytes);
-            for (int p = 0; p < 7; ++p) 
+            if (srcN == dstN)
             {
-                int xorig[] = { 0,4,0,2,0,1,0 };
-                int yorig[] = { 0,0,4,0,2,0,1 };
-                int xspc[] = { 8,8,4,4,2,2,1 };
-                int yspc[] = { 8,8,8,4,4,2,2 };
-                int i, j, x, y;
-                x = (a.width - xorig[p] + xspc[p] - 1) / xspc[p];
-                y = (a.height - yorig[p] + yspc[p] - 1) / yspc[p];
-                if (x && y) 
+                for (int i = 0; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (int i = srcN, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + dst[i - dstN];
+            }
+            else
+            {
+                int i = 0;
+                for (; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (; i < dstN; ++i)
+                    dst[i] = 0xFF;
+                curr += srcN;
+                dst += dstN;
+                for (int x = 1; x < width; ++x)
                 {
-                    uint32_t img_len = ((((a.channels * x * depth) + 7) >> 3) + 1) * y;
-                    if (!CreatePngImageRaw(a, image_data, image_data_len, out_n, x, y, depth, color))
-                    {
-                        return 0;
-                    }
-                    for (j = 0; j < y; ++j) 
-                    {
-                        for (i = 0; i < x; ++i) 
-                        {
-                            int out_y = j * yspc[p] + yorig[p];
-                            int out_x = i * xspc[p] + xorig[p];
-                            memcpy(a.buf1.data + out_y * a.width * out_bytes + out_x * out_bytes,
-                                a.buf0.data + (j * x + i) * out_bytes, out_bytes);
-                        }
-                    }
-                    image_data += img_len;
-                    image_data_len -= img_len;
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + dst[i - dstN];
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    dst += dstN;
                 }
             }
-            return a.Swap();
         }
 
-        template<class T> void ComputeTransparency(T * dst, size_t size, size_t out_n, T tc[3])
+        static void DecodeLine2(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
         {
-            if (out_n == 2)
+            if (srcN == dstN)
+            {
+                for (int i = 0, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + prev[i];
+            }
+            else
+            {
+                for (int x = 0; x < width; ++x)
+                {
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + prev[i];
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    prev += dstN;
+                    dst += dstN;
+                }
+            }
+        }
+
+        static void DecodeLine3(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
+        {
+            if (srcN == dstN)
+            {
+                for (int i = 0; i < srcN; ++i)
+                    dst[i] = curr[i] + (prev[i] >> 1);
+                for (int i = srcN, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + ((prev[i] + dst[i - dstN]) >> 1);
+            }
+            else
+            {
+                int i = 0;
+                for (; i < srcN; ++i)
+                    dst[i] = curr[i] + (prev[i] >> 1);
+                for (; i < dstN; ++i)
+                    dst[i] = 0xFF;
+                curr += srcN;
+                prev += dstN;
+                dst += dstN;
+                for (int x = 1; x < width; ++x)
+                {
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + ((prev[i] + dst[i - dstN]) >> 1);
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    prev += dstN;                    
+                    dst += dstN;
+                }
+            }
+        }
+
+        static void DecodeLine4(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
+        {
+            if (srcN == dstN)
+            {
+                for (int i = 0; i < srcN; ++i)
+                    dst[i] = curr[i] + Paeth(0, prev[i], 0);
+                for (int i = srcN, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + Paeth(dst[i - dstN], prev[i], prev[i - dstN]);
+            }
+            else
+            {
+                int i = 0;
+                for (; i < srcN; ++i)
+                    dst[i] = curr[i] + Paeth(0, prev[i], 0);
+                for (; i < dstN; ++i)
+                    dst[i] = 0xFF;
+                curr += srcN;
+                prev += dstN;
+                dst += dstN;
+                for (int x = 1; x < width; ++x)
+                {
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + Paeth(dst[i - dstN], prev[i], prev[i - dstN]);
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    prev += dstN;
+                    dst += dstN;
+                }
+            }
+        }
+
+        static void DecodeLine5(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
+        {
+            if (srcN == dstN)
+            {
+                for (int i = 0; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (int i = srcN, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + (dst[i - dstN] >> 1);
+            }
+            else
+            {
+                int i = 0;
+                for (; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (; i < dstN; ++i)
+                    dst[i] = 0xFF;
+                curr += srcN;
+                dst += dstN;
+                for (int x = 1; x < width; ++x)
+                {
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + (dst[i - dstN] >> 1);;
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    dst += dstN;
+                }
+            }
+        }
+
+        static void DecodeLine6(const uint8_t* curr, const uint8_t* prev, int width, int srcN, int dstN, uint8_t* dst)
+        {
+            if (srcN == dstN)
+            {
+                for (int i = 0; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (int i = srcN, n = srcN * width; i < n; ++i)
+                    dst[i] = curr[i] + Paeth(dst[i - dstN], 0, 0);
+            }
+            else
+            {
+                int i = 0;
+                for (; i < srcN; ++i)
+                    dst[i] = curr[i];
+                for (; i < dstN; ++i)
+                    dst[i] = 0xFF;
+                curr += srcN;
+                dst += dstN;
+                for (int x = 1; x < width; ++x)
+                {
+                    int i = 0;
+                    for (; i < srcN; ++i)
+                        dst[i] = curr[i] + Paeth(dst[i - dstN], 0, 0);
+                    for (; i < dstN; ++i)
+                        dst[i] = 0xFF;
+                    curr += srcN;
+                    dst += dstN;
+                }
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------
+
+        template<class T> void ComputeTransparency(T * dst, size_t size, size_t outN, T tc[3])
+        {
+            if (outN == 2)
             {
                 for (size_t i = 0; i < size; ++i)
                 {
@@ -681,7 +585,7 @@ namespace Simd
                     dst += 2;
                 }
             }
-            else if (out_n == 4)
+            else if (outN == 4)
             {
                 for (size_t i = 0; i < size; ++i)
                 {
@@ -694,40 +598,35 @@ namespace Simd
                 assert(0);
         }
 
-        static int ExpandPalette(Png & a, const uint8_t* palette)
+        //-------------------------------------------------------------------------------------------------
+
+        static void ExpandPalette(const uint8_t* src, size_t size, int outN, const uint8_t* palette, uint8_t* dst)
         {
-            uint32_t i, pixel_count = a.width * a.height;
-            uint8_t * orig = a.buf0.data;
-
-            a.buf1.Resize(pixel_count * a.img_out_n);
-            if(a.buf1.Empty())
-                return PngError("outofmem", "Out of memory");
-
-            uint8_t* p = a.buf1.data;
-            if (a.img_out_n == 3)
+            if (outN == 3)
             {
-                for (i = 0; i < pixel_count; ++i) 
+                for (size_t i = 0; i < size; ++i)
                 {
-                    int n = orig[i] * 4;
-                    p[0] = palette[n];
-                    p[1] = palette[n + 1];
-                    p[2] = palette[n + 2];
-                    p += 3;
+                    int n = src[i] * 4;
+                    dst[0] = palette[n];
+                    dst[1] = palette[n + 1];
+                    dst[2] = palette[n + 2];
+                    dst += 3;
                 }
             }
-            else 
+            else if (outN == 4)
             {
-                for (i = 0; i < pixel_count; ++i) 
+                for (size_t i = 0; i < size; ++i)
                 {
-                    int n = orig[i] * 4;
-                    p[0] = palette[n];
-                    p[1] = palette[n + 1];
-                    p[2] = palette[n + 2];
-                    p[3] = palette[n + 3];
-                    p += 4;
+                    int n = src[i] * 4;
+                    dst[0] = palette[n];
+                    dst[1] = palette[n + 1];
+                    dst[2] = palette[n + 2];
+                    dst[3] = palette[n + 3];
+                    dst += 4;
                 }
             }
-            return a.Swap();
+            else
+                assert(0);
         }
 
         //-------------------------------------------------------------------------------------------------
@@ -892,11 +791,19 @@ namespace Simd
         {
             if (_param.format == SimdPixelFormatNone)
                 _param.format = SimdPixelFormatRgba32;
+            _decodeLine[0] = Base::DecodeLine0;
+            _decodeLine[1] = Base::DecodeLine1;
+            _decodeLine[2] = Base::DecodeLine2;
+            _decodeLine[3] = Base::DecodeLine3;
+            _decodeLine[4] = Base::DecodeLine4;
+            _decodeLine[5] = Base::DecodeLine5;
+            _decodeLine[6] = Base::DecodeLine6;
+            _expandPalette = Base::ExpandPalette;
         }
 
-        void ImagePngLoader::SetConverter(int channels)
+        void ImagePngLoader::SetConverter()
         {
-            _converter = GetConverter(_depth, channels, _param.format);
+            _converter = GetConverter(_depth, _outN, _param.format);
         }
 
 #ifdef SIMD_CPP_2011_ENABLE
@@ -910,57 +817,30 @@ namespace Simd
 
         bool ImagePngLoader::FromStream()
         {
+            SIMD_PERF_FUNC();
+
             if (!ParseFile())
                 return false;
-
-            Png p;
-            p.width = _width;
-            p.height = _height;
-            p.channels = _channels;
-            p.depth = _depth;
 
             InputMemoryStream zSrc = MergedDataStream();
             OutputMemoryStream zDst(AlignHi(size_t(_width) * _depth, 8) * _height * _channels + _height);
             if(!Zlib::Decode(zSrc, zDst, !_iPhone))
                 return false;
 
-            int req_comp = 4;
-            if (Image::ChannelCount((Image::Format)_param.format) == _channels && _depth != 16)
-                req_comp = _channels;
-
-            if ((req_comp == p.channels + 1 && req_comp != 3 && !_paletteChannels) || _hasTrans)
-                p.img_out_n = p.channels + 1;
-            else
-                p.img_out_n = p.channels;
-            if (!CreatePngImage(p, zDst.Data(), (int)zDst.Size(), p.img_out_n, p.depth, _color, _interlace))
-                return 0;
-            if (_hasTrans) 
-            {
-                if (p.depth == 16)
-                    ComputeTransparency((uint16_t*)p.buf0.data, p.width * p.height, p.img_out_n, _tc16);
-
-                else
-                    ComputeTransparency(p.buf0.data, p.width * p.height, p.img_out_n, _tc);
-            }
-            if (_paletteChannels)
-            {
-                p.channels = _paletteChannels;
-                p.img_out_n = _paletteChannels;
-                if (req_comp >= 3) 
-                    p.img_out_n = req_comp;
-                if (!ExpandPalette(p, _palette.data))
-                    return false;
-            }
-            else if (_hasTrans)
-                ++p.channels;
-
-            if (!(p.depth <= 8 || p.depth == 16))
+            if (!CreateImage(zDst.Data(), zDst.Size()))
                 return false;
 
-            SIMD_PERF_BEG("conversion");
-            SetConverter(p.img_out_n);
-            _image.Recreate(p.width, p.height, (Image::Format)_param.format);
-            _converter(p.buf0.data, p.width, p.height, p.width * p.img_out_n, _image.data, _image.stride);
+            if (_hasTrans) 
+            {
+                if (_depth == 16)
+                    ComputeTransparency((uint16_t*)_buffer.data, _width * _height, _outN, _tc16);
+                else
+                    ComputeTransparency(_buffer.data, _width * _height, _outN, _tc);
+            }
+
+            ExpandPalette();
+
+            ConvertImage();
 
             return true;
         }
@@ -1016,6 +896,15 @@ namespace Simd
                 if (!_stream.ReadBe32u(crc32))
                     return false;
             }
+            int reqN = 4;
+            if (Image::ChannelCount((Image::Format)_param.format) == _channels && _depth != 16)
+                reqN = _channels;
+            else
+                reqN = 4;
+            if ((reqN == _channels + 1 && reqN != 3 && !_paletteChannels) || _hasTrans)
+                _outN = _channels + 1;
+            else
+                _outN = _channels;
             return _idats.size() != 0;
         }
 
@@ -1158,6 +1047,204 @@ namespace Simd
                 }
                 return InputMemoryStream(_idat.data, _idat.size);
             }
+        }
+
+        bool ImagePngLoader::CreateImage(const uint8_t* data, size_t size)
+        {
+            SIMD_PERF_FUNC();
+
+            int outS = _outN * (_depth == 16 ? 2 : 1);
+            if (!_interlace)
+                return CreateImageRaw(data, (int)size, _width, _height);
+            Array8u buf(_width * _height * outS);
+            for (int p = 0; p < 7; ++p)
+            {
+                static const int xorig[] = { 0,4,0,2,0,1,0 };
+                static const int yorig[] = { 0,0,4,0,2,0,1 };
+                static const int xspc[] = { 8,8,4,4,2,2,1 };
+                static const int yspc[] = { 8,8,8,4,4,2,2 };
+                int i, j, x, y;
+                x = (_width - xorig[p] + xspc[p] - 1) / xspc[p];
+                y = (_height - yorig[p] + yspc[p] - 1) / yspc[p];
+                if (x && y)
+                {
+                    uint32_t img_len = ((((_channels * x * _depth) + 7) >> 3) + 1) * y;
+                    if (!CreateImageRaw(data, (int)size, x, y))
+                        return false;
+                    for (j = 0; j < y; ++j)
+                    {
+                        for (i = 0; i < x; ++i)
+                        {
+                            int out_y = j * yspc[p] + yorig[p];
+                            int out_x = i * xspc[p] + xorig[p];
+                            memcpy(buf.data + out_y * _width * outS + out_x * outS, _buffer.data + (j * x + i) * outS, outS);
+                        }
+                    }
+                    data += img_len;
+                    size -= img_len;
+                }
+            }
+            _buffer.Swap(buf);
+            return true;
+        }
+
+        bool ImagePngLoader::CreateImageRaw(const uint8_t* data, uint32_t size, uint32_t width, uint32_t height)
+        {
+            static const uint8_t FirstRowFilter[5] = { 0, 1, 0, 5, 6 };
+            int bytes = (_depth == 16 ? 2 : 1);
+            uint32_t i, j, stride = width * _outN * bytes;
+            uint32_t img_len, img_width_bytes;
+            int k;
+            int width_ = width;
+
+            int output_bytes = _outN * bytes;
+            int filter_bytes = _channels * bytes;
+
+            assert(_outN == _channels || _outN == _channels + 1);
+
+            _buffer.Resize(width * height * output_bytes);
+            if (_buffer.Empty())
+                return PngLoadError("outofmem", "Out of memory");
+
+            img_width_bytes = (_channels * width * _depth + 7) >> 3;
+            img_len = (img_width_bytes + 1) * height;
+
+            if (size < img_len)
+                return CorruptPngError("not enough pixels");
+
+            for (j = 0; j < height; ++j)
+            {
+                uint8_t* cur = _buffer.data + stride * j;
+                uint8_t* prior;
+                int filter = *data++;
+
+                if (filter > 4)
+                    return CorruptPngError("invalid filter");
+
+                if (_depth < 8)
+                {
+                    if (img_width_bytes > width)
+                        return CorruptPngError("invalid width");
+                    cur += width * _outN - img_width_bytes; // store output to the rightmost img_len bytes, so we can decode in place
+                    filter_bytes = 1;
+                    width_ = img_width_bytes;
+                }
+                prior = cur - stride;
+                if (j == 0)
+                    filter = FirstRowFilter[filter];
+
+                int size = (_depth < 8 || _channels == _outN ? width_ : width);
+                int dstN = _depth < 8 || _channels == _outN ? filter_bytes : output_bytes;
+                _decodeLine[filter](data, cur - stride, size, filter_bytes, dstN, cur);
+                data += size * filter_bytes;
+            }
+            if (_depth < 8)
+            {
+                for (j = 0; j < height; ++j)
+                {
+                    uint8_t* cur = _buffer.data + stride * j;
+                    const uint8_t* in = _buffer.data + stride * j + width * _outN - img_width_bytes;
+                    uint8_t scale = (_color == 0) ? DepthScaleTable[_depth] : 1;
+                    if (_depth == 4)
+                    {
+                        for (k = width * _channels; k >= 2; k -= 2, ++in)
+                        {
+                            *cur++ = scale * ((*in >> 4));
+                            *cur++ = scale * ((*in) & 0x0f);
+                        }
+                        if (k > 0)
+                            *cur++ = scale * ((*in >> 4));
+                    }
+                    else if (_depth == 2)
+                    {
+                        for (k = width * _channels; k >= 4; k -= 4, ++in)
+                        {
+                            *cur++ = scale * ((*in >> 6));
+                            *cur++ = scale * ((*in >> 4) & 0x03);
+                            *cur++ = scale * ((*in >> 2) & 0x03);
+                            *cur++ = scale * ((*in) & 0x03);
+                        }
+                        if (k > 0)
+                            *cur++ = scale * ((*in >> 6));
+                        if (k > 1)
+                            *cur++ = scale * ((*in >> 4) & 0x03);
+                        if (k > 2)
+                            *cur++ = scale * ((*in >> 2) & 0x03);
+                    }
+                    else if (_depth == 1)
+                    {
+                        for (k = width * _channels; k >= 8; k -= 8, ++in)
+                        {
+                            *cur++ = scale * ((*in >> 7));
+                            *cur++ = scale * ((*in >> 6) & 0x01);
+                            *cur++ = scale * ((*in >> 5) & 0x01);
+                            *cur++ = scale * ((*in >> 4) & 0x01);
+                            *cur++ = scale * ((*in >> 3) & 0x01);
+                            *cur++ = scale * ((*in >> 2) & 0x01);
+                            *cur++ = scale * ((*in >> 1) & 0x01);
+                            *cur++ = scale * ((*in) & 0x01);
+                        }
+                        if (k > 0) *cur++ = scale * ((*in >> 7));
+                        if (k > 1) *cur++ = scale * ((*in >> 6) & 0x01);
+                        if (k > 2) *cur++ = scale * ((*in >> 5) & 0x01);
+                        if (k > 3) *cur++ = scale * ((*in >> 4) & 0x01);
+                        if (k > 4) *cur++ = scale * ((*in >> 3) & 0x01);
+                        if (k > 5) *cur++ = scale * ((*in >> 2) & 0x01);
+                        if (k > 6) *cur++ = scale * ((*in >> 1) & 0x01);
+                    }
+                    if (_channels != _outN)
+                    {
+                        int q;
+                        cur = _buffer.data + stride * j;
+                        if (_channels == 1)
+                        {
+                            for (q = width - 1; q >= 0; --q)
+                            {
+                                cur[q * 2 + 1] = 255;
+                                cur[q * 2 + 0] = cur[q];
+                            }
+                        }
+                        else
+                        {
+                            assert(_channels == 3);
+                            for (q = width - 1; q >= 0; --q)
+                            {
+                                cur[q * 4 + 3] = 255;
+                                cur[q * 4 + 2] = cur[q * 3 + 2];
+                                cur[q * 4 + 1] = cur[q * 3 + 1];
+                                cur[q * 4 + 0] = cur[q * 3 + 0];
+                            }
+                        }
+                    }
+                }
+            }
+            else if (_depth == 16)
+            {
+                uint8_t* cur = _buffer.data;
+                uint16_t* cur16 = (uint16_t*)cur;
+                for (i = 0; i < width * height * _outN; ++i, cur16++, cur += 2)
+                    *cur16 = (cur[0] << 8) | cur[1];
+            }
+            return 1;
+        }
+
+        void ImagePngLoader::ExpandPalette()
+        {
+            if (_paletteChannels)
+            {
+                _outN = Max(_paletteChannels, _outN);
+                Array8u buf(_width * _height * _outN);
+                _expandPalette(_buffer.data, _width * _height, _outN, _palette.data, buf.data);
+                _buffer.Swap(buf);
+            }
+        }
+
+        void ImagePngLoader::ConvertImage()
+        {
+            SIMD_PERF_FUNC();
+            SetConverter();
+            _image.Recreate(_width, _height, (Image::Format)_param.format);
+            _converter(_buffer.data, _width, _height, _width * _outN, _image.data, _image.stride);
         }
     }
 }

@@ -27,6 +27,8 @@
 
 #include "Simd/SimdDefs.h"
 
+#include <string>
+
 namespace Simd
 {
 #if defined(SIMD_X86_ENABLE) || defined(SIMD_X64_ENABLE)
@@ -89,12 +91,14 @@ namespace Simd
 
     namespace Cpu
     {
+        extern const std::string CPU_MODEL;
         extern const size_t SOCKET_NUMBER;
         extern const size_t CORE_NUMBER;
         extern const size_t THREAD_NUMBER;
         extern const size_t L1_CACHE_SIZE;
         extern const size_t L2_CACHE_SIZE;
         extern const size_t L3_CACHE_SIZE;
+        extern const uint64_t RAM_SIZE;
     }
 
     namespace Base
@@ -108,6 +112,8 @@ namespace Simd
 #if defined(__GNUC__) && (defined(SIMD_PPC_ENABLE) || defined(SIMD_PPC64_ENABLE) || defined(SIMD_ARM_ENABLE) || defined(SIMD_ARM64_ENABLE))
         bool CheckBit(int at, int bit);
 #endif
+
+        std::string CpuModel();
 
         size_t CpuSocketNumber();
 

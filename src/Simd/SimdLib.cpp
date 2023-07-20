@@ -107,7 +107,17 @@ SIMD_API const char * SimdVersion()
 
 using namespace Simd;
 
-SIMD_API size_t SimdCpuInfo(SimdCpuInfoType type)
+SIMD_API const char* SimdCpuDesc(SimdCpuDescType type)
+{
+    switch (type)
+    {
+    case SimdCpuDescModel: return Cpu::CPU_MODEL.c_str();
+    default:
+        return NULL;
+    }
+}
+
+SIMD_API uint64_t SimdCpuInfo(SimdCpuInfoType type)
 {
     switch (type)
     {
@@ -117,6 +127,7 @@ SIMD_API size_t SimdCpuInfo(SimdCpuInfoType type)
     case SimdCpuInfoCacheL1: return Cpu::L1_CACHE_SIZE;
     case SimdCpuInfoCacheL2: return Cpu::L2_CACHE_SIZE;
     case SimdCpuInfoCacheL3: return Cpu::L3_CACHE_SIZE;
+    case SimdCpuInfoRam: return Cpu::RAM_SIZE;
 #ifdef SIMD_SSE41_ENABLE
     case SimdCpuInfoSse41: return Sse41::Enable ? 1 : 0;
 #endif
@@ -1922,7 +1933,7 @@ SIMD_API void* SimdDescrIntInit(size_t size, size_t depth)
 {
     SIMD_EMPTY();
     typedef void* (*SimdDescrIntInitPtr) (size_t size, size_t depth);
-    const static SimdDescrIntInitPtr simdDescrIntInit = SIMD_FUNC3(DescrIntInit, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
+    const static SimdDescrIntInitPtr simdDescrIntInit = SIMD_FUNC4(DescrIntInit, SIMD_AVX512VNNI_FUNC, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
 
     return simdDescrIntInit(size, depth);
 }
@@ -6578,6 +6589,21 @@ SIMD_API void SimdSynetNormalizeLayerForwardV2(const float* src, size_t batch, s
     const static SimdSynetNormalizeLayerForwardV2Ptr simdSynetNormalizeLayerForwardV2 = SIMD_FUNC3(SynetNormalizeLayerForwardV2, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
 
     simdSynetNormalizeLayerForwardV2(src, batch, channels, spatial, scale, shift, eps, format, buf, dst);
+#else
+    assert(0);
+#endif
+}
+
+SIMD_API void SimdSynetNormalizeLayerForwardV3(const float* src, size_t batch, size_t channels, size_t spatial,
+    const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst)
+{
+    SIMD_EMPTY();
+#if defined(SIMD_SYNET_ENABLE)
+    typedef void(*SimdSynetNormalizeLayerForwardV3Ptr) (const float* src, size_t batch, size_t channels, size_t spatial,
+        const float* scale, const float* shift, const float* eps, SimdTensorFormatType format, float* buf, float* dst);
+    const static SimdSynetNormalizeLayerForwardV3Ptr simdSynetNormalizeLayerForwardV3 = SIMD_FUNC3(SynetNormalizeLayerForwardV3, SIMD_AVX512BW_FUNC, SIMD_AVX2_FUNC, SIMD_SSE41_FUNC);// , SIMD_NEON_FUNC);
+
+    simdSynetNormalizeLayerForwardV3(src, batch, channels, spatial, scale, shift, eps, format, buf, dst);
 #else
     assert(0);
 #endif

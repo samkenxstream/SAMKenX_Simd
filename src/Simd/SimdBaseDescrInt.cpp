@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar.
+* Copyright (c) 2011-2023 Yermalayeu Ihar.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,44 @@ namespace Simd
             return value;
         }
 
+        static void Encode32f4(const float* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
+        {
+            assert(size % 2 == 0);
+            sum = 0, sqsum = 0;
+            for (size_t i = 0; i < size; i += 2)
+            {
+                uint32_t v0 = Encode32f(src[0], scale, min, sum, sqsum);
+                uint32_t v1 = Encode32f(src[1], scale, min, sum, sqsum);
+                dst[0] = v0 | v1 << 4;
+                src += 2;
+                dst += 1;
+            }
+        }
+
+        static void Encode32f5(const float* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
+        {
+            assert(size % 8 == 0);
+            sum = 0, sqsum = 0;
+            for (size_t i = 0; i < size; i += 8)
+            {
+                uint32_t v0 = Encode32f(src[0], scale, min, sum, sqsum);
+                uint32_t v1 = Encode32f(src[1], scale, min, sum, sqsum);
+                uint32_t v2 = Encode32f(src[2], scale, min, sum, sqsum);
+                uint32_t v3 = Encode32f(src[3], scale, min, sum, sqsum);
+                uint32_t v4 = Encode32f(src[4], scale, min, sum, sqsum);
+                uint32_t v5 = Encode32f(src[5], scale, min, sum, sqsum);
+                uint32_t v6 = Encode32f(src[6], scale, min, sum, sqsum);
+                uint32_t v7 = Encode32f(src[7], scale, min, sum, sqsum);
+                dst[0] = v0 | v1 << 5;
+                dst[1] = v1 >> 3 | v2 << 2 | v3 << 7;
+                dst[2] = v3 >> 1 | v4 << 4;
+                dst[3] = v4 >> 4 | v5 << 1 | v6 << 6;
+                dst[4] = v6 >> 2 | v7 << 3;
+                src += 8;
+                dst += 5;
+            }
+        }
+
         static void Encode32f6(const float* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
         {
             assert(size % 4 == 0);
@@ -128,6 +166,44 @@ namespace Simd
             return value;
         }
 
+        static void Encode16f4(const uint16_t* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
+        {
+            assert(size % 2 == 0);
+            sum = 0, sqsum = 0;
+            for (size_t i = 0; i < size; i += 2)
+            {
+                uint32_t v0 = Encode16f(src[0], scale, min, sum, sqsum);
+                uint32_t v1 = Encode16f(src[1], scale, min, sum, sqsum);
+                dst[0] = v0 | v1 << 4;
+                src += 2;
+                dst += 1;
+            }
+        }
+
+        static void Encode16f5(const uint16_t* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
+        {
+            assert(size % 8 == 0);
+            sum = 0, sqsum = 0;
+            for (size_t i = 0; i < size; i += 8)
+            {
+                uint32_t v0 = Encode16f(src[0], scale, min, sum, sqsum);
+                uint32_t v1 = Encode16f(src[1], scale, min, sum, sqsum);
+                uint32_t v2 = Encode16f(src[2], scale, min, sum, sqsum);
+                uint32_t v3 = Encode16f(src[3], scale, min, sum, sqsum);
+                uint32_t v4 = Encode16f(src[4], scale, min, sum, sqsum);
+                uint32_t v5 = Encode16f(src[5], scale, min, sum, sqsum);
+                uint32_t v6 = Encode16f(src[6], scale, min, sum, sqsum);
+                uint32_t v7 = Encode16f(src[7], scale, min, sum, sqsum);
+                dst[0] = v0 | v1 << 5;
+                dst[1] = v1 >> 3 | v2 << 2 | v3 << 7;
+                dst[2] = v3 >> 1 | v4 << 4;
+                dst[3] = v4 >> 4 | v5 << 1 | v6 << 6;
+                dst[4] = v6 >> 2 | v7 << 3;
+                src += 8;
+                dst += 5;
+            }
+        }
+
         static void Encode16f6(const uint16_t* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst)
         {
             assert(size % 4 == 0);
@@ -181,6 +257,39 @@ namespace Simd
 
         //-------------------------------------------------------------------------------------------------
 
+        static void Decode32f4(const uint8_t* src, float scale, float shift, size_t size, float* dst)
+        {
+            assert(size % 2 == 0);
+            for (size_t i = 0; i < size; i += 2)
+            {
+                uint32_t val = *(uint32_t*)(src + 0);
+                dst[0] = (val & 0xF) * scale + shift;
+                dst[1] = ((val >> 4) & 0xF) * scale + shift;
+                src += 1;
+                dst += 2;
+            }
+        }
+
+        static void Decode32f5(const uint8_t* src, float scale, float shift, size_t size, float* dst)
+        {
+            assert(size % 8 == 0);
+            for (size_t i = 0; i < size; i += 8)
+            {
+                uint32_t lo = *(uint32_t*)(src + 0);
+                dst[0] = (lo & 0x1F) * scale + shift;
+                dst[1] = ((lo >> 5) & 0x1F) * scale + shift;
+                dst[2] = ((lo >> 10) & 0x1F) * scale + shift;
+                dst[3] = ((lo >> 15) & 0x1F) * scale + shift;
+                uint32_t hi = *(uint32_t*)(src + 2);
+                dst[4] = ((hi >> 4) & 0x1F) * scale + shift;
+                dst[5] = ((hi >> 9) & 0x1F) * scale + shift;
+                dst[6] = ((hi >> 14) & 0x1F) * scale + shift;
+                dst[7] = ((hi >> 19) & 0x1F) * scale + shift;
+                src += 5;
+                dst += 8;
+            }
+        }
+
         static void Decode32f6(const uint8_t* src, float scale, float shift, size_t size, float* dst)
         {
             assert(size % 4 == 0);
@@ -223,6 +332,39 @@ namespace Simd
         }
 
         //-------------------------------------------------------------------------------------------------
+
+        static void Decode16f4(const uint8_t* src, float scale, float shift, size_t size, uint16_t* dst)
+        {
+            assert(size % 2 == 0);
+            for (size_t i = 0; i < size; i += 2)
+            {
+                uint32_t val = *(uint32_t*)(src + 0);
+                dst[0] = Float32ToFloat16((val & 0xF) * scale + shift);
+                dst[1] = Float32ToFloat16(((val >> 4) & 0xF) * scale + shift);
+                src += 1;
+                dst += 2;
+            }
+        }
+
+        static void Decode16f5(const uint8_t* src, float scale, float shift, size_t size, uint16_t* dst)
+        {
+            assert(size % 8 == 0);
+            for (size_t i = 0; i < size; i += 8)
+            {
+                uint32_t lo = *(uint32_t*)(src + 0);
+                dst[0] = Float32ToFloat16((lo & 0x1F) * scale + shift);
+                dst[1] = Float32ToFloat16(((lo >> 5) & 0x1F) * scale + shift);
+                dst[2] = Float32ToFloat16(((lo >> 10) & 0x1F) * scale + shift);
+                dst[3] = Float32ToFloat16(((lo >> 15) & 0x1F) * scale + shift);
+                uint32_t hi = *(uint32_t*)(src + 2);
+                dst[4] = Float32ToFloat16(((hi >> 4) & 0x1F) * scale + shift);
+                dst[5] = Float32ToFloat16(((hi >> 9) & 0x1F) * scale + shift);
+                dst[6] = Float32ToFloat16(((hi >> 14) & 0x1F) * scale + shift);
+                dst[7] = Float32ToFloat16(((hi >> 19) & 0x1F) * scale + shift);
+                src += 5;
+                dst += 8;
+            }
+        }
 
         static void Decode16f6(const uint8_t* src, float scale, float shift, size_t size, uint16_t* dst)
         {
@@ -272,6 +414,45 @@ namespace Simd
         SIMD_INLINE int32_t Mul(int32_t a, int32_t b)
         {
             return a * b;
+        }
+
+        template<> int32_t Correlation<4>(const uint8_t* a, const uint8_t* b, size_t size)
+        {
+            int32_t ab = 0;
+            for (size_t i = 0; i < size; i += 2)
+            {
+                uint32_t a0 = a[0];
+                uint32_t b0 = b[0];
+                ab += Mul(a0 & 0xF, b0 & 0xF);
+                ab += Mul(a0 >> 4, b0 >> 4);
+                a += 1;
+                b += 1;
+            }
+            return ab;
+        }
+
+        template<> int32_t Correlation<5>(const uint8_t* a, const uint8_t* b, size_t size)
+        {
+            assert(size % 8 == 0);
+            int32_t ab = 0;
+            for (size_t i = 0; i < size; i += 8)
+            {
+                uint32_t a0 = *(uint32_t*)(a + 0);
+                uint32_t b0 = *(uint32_t*)(b + 0);
+                ab += Mul(a0 & 0x1F, b0 & 0x1F);
+                ab += Mul((a0 >> 5) & 0x1F, (b0 >> 5) & 0x1F);
+                ab += Mul((a0 >> 10) & 0x1F, (b0 >> 10) & 0x1F);
+                ab += Mul((a0 >> 15) & 0x1F, (b0 >> 15) & 0x1F);
+                uint32_t a2 = *(uint32_t*)(a + 2);
+                uint32_t b2 = *(uint32_t*)(b + 2);
+                ab += Mul((a2 >> 4) & 0x1F, (b2 >> 4) & 0x1F);
+                ab += Mul((a2 >> 9) & 0x1F, (b2 >> 9) & 0x1F);
+                ab += Mul((a2 >> 14) & 0x1F, (b2 >> 14) & 0x1F);
+                ab += Mul((a2 >> 19) & 0x1F, (b2 >> 19) & 0x1F);
+                a += 5;
+                b += 5;
+            }
+            return ab;
         }
 
         template<> int32_t Correlation<6>(const uint8_t* a, const uint8_t* b, size_t size)
@@ -327,14 +508,29 @@ namespace Simd
         template<int bits> void CosineDistance(const uint8_t* a, const uint8_t* b, size_t size, float* distance)
         {
             float abSum = (float)Correlation<bits>(a + 16, b + 16, size);
-            Base::DecodeCosineDistance(a, b, abSum, float(size), distance);
+            Base::DecodeCosineDistance(a, b, abSum, distance);
+        }
+
+        //-------------------------------------------------------------------------------------------------
+
+        template<int bits> void MacroCosineDistancesDirect(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, size_t size, float* distances, size_t stride)
+        {
+            for (size_t i = 0; i < M; ++i)
+            {
+                const uint8_t* a = A[i];
+                for (size_t j = 0; j < N; ++j)
+                {
+                    const uint8_t* b = B[j];
+                    CosineDistance<bits>(a, b, size, distances++);
+                }
+            }
         }
 
         //-------------------------------------------------------------------------------------------------
 
         bool DescrInt::Valid(size_t size, size_t depth)
         {
-            if (depth < 6 || depth > 8)
+            if (depth < 4 || depth > 8)
                 return false;
             if (size == 0 || size % 8 != 0 || size > 128 * 256)
                 return false;
@@ -351,6 +547,24 @@ namespace Simd
             _minMax16f = MinMax16f;
             switch (depth)
             {
+            case 4:
+            {
+                _encode32f = Encode32f4;
+                _encode16f = Encode16f4;
+                _decode32f = Decode32f4;
+                _decode16f = Decode16f4;
+                _cosineDistance = Base::CosineDistance<4>;
+                break;
+            }
+            case 5:
+            {
+                _encode32f = Encode32f5;
+                _encode16f = Encode16f5;
+                _decode32f = Decode32f5;
+                _decode16f = Decode16f5;
+                _cosineDistance = Base::CosineDistance<5>;
+                break;
+            }
             case 6:
             {
                 _encode32f = Encode32f6;

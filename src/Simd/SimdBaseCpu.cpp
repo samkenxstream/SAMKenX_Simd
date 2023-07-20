@@ -1,7 +1,7 @@
 /*
 * Simd Library (http://ermig1979.github.io/Simd).
 *
-* Copyright (c) 2011-2022 Yermalayeu Ihar,
+* Copyright (c) 2011-2023 Yermalayeu Ihar,
 *               2022-2022 Souriya Trinh,
 *               2022-2022 Fabien Spindler.
 *
@@ -182,6 +182,42 @@ namespace Simd
             return 0;
         }
 
+        uint64_t CpuRamSize()
+        {
+            MEMORYSTATUSEX memorystatusex;
+            memorystatusex.dwLength = sizeof(memorystatusex);
+            if (GlobalMemoryStatusEx(&memorystatusex) == TRUE)
+                return memorystatusex.ullTotalPhys;
+            return 0;
+        }
+
+        static std::string Execute(const char* cmd)
+        {
+            std::string result = "";            
+            ::FILE * pipe = _popen(cmd, "r");
+            if (pipe)
+            {
+                char buffer[260];
+                while (!feof(pipe))
+                {
+                    if (fgets(buffer, sizeof(buffer), pipe) != NULL)
+                        result += buffer;
+                }
+                _pclose(pipe);
+            }
+            return result;
+        }
+
+        std::string CpuModel()
+        {
+            std::string raw = Execute("wmic cpu get Name /format:value");
+            size_t beg = raw.find('=') + 1;
+            size_t end = raw.find('\r', beg);
+            while (raw[end - 1] == ' ')
+                end--;
+            return raw.substr(beg, end - beg);
+        }
+
 #elif defined(__GNUC__)
 
         size_t CpuSocketNumber()
@@ -254,7 +290,34 @@ namespace Simd
             }
         }
 #endif
+        uint64_t CpuRamSize()
+        {
+            uint64_t size = 0;
+            ::FILE* file = ::popen("grep MemTotal /proc/meminfo | awk '{printf \"%d\", $2 }'", "r");
+            if (file)
+            {
+                char buf[PATH_MAX];
+                while (::fgets(buf, PATH_MAX, file));
+                size = atoll(buf) * 1024;
+                ::pclose(file);
+            }
+            return size;
+        }
 
+        std::string CpuModel()
+        {
+            std::string model;
+            ::FILE* file = ::popen("lscpu | grep 'Model name:' | sed -r 's/Model name:\\s{1,}//g'", "r");
+            if (file)
+            {
+                char buffer[PATH_MAX];
+                while (::fgets(buffer, PATH_MAX, file));
+                model = buffer;
+                model = model.substr(0, model.find('\n'));
+                ::pclose(file);
+            }
+            return model;
+        }
 #else
 #error This platform is unsupported!
 #endif
@@ -262,6 +325,7 @@ namespace Simd
 
     namespace Cpu
     {
+        const std::string CPU_MODEL = Base::CpuModel();
         const size_t SOCKET_NUMBER = Base::CpuSocketNumber();
         const size_t CORE_NUMBER = Base::CpuCoreNumber();
 #ifdef SIMD_CPP_2011_ENABLE
@@ -270,5 +334,6 @@ namespace Simd
         const size_t L1_CACHE_SIZE = Base::CpuCacheSize(1);
         const size_t L2_CACHE_SIZE = Base::CpuCacheSize(2);
         const size_t L3_CACHE_SIZE = Base::CpuCacheSize(3);
+        const uint64_t RAM_SIZE = Base::CpuRamSize();
     }
 }

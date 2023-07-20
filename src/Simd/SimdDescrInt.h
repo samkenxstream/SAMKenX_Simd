@@ -53,14 +53,15 @@ namespace Simd
 
             void VectorNorm(const uint8_t* a, float* norm) const;
 
-        protected:
-            typedef void (*MinMax32fPtr)(const float* src, size_t size, float &min, float &max);
-            typedef void (*MinMax16fPtr)(const uint16_t* src, size_t size, float& min, float& max);
             typedef void (*Encode32fPtr)(const float* src, float scale, float min, size_t size, int32_t &sum, int32_t& sqsum, uint8_t* dst);
             typedef void (*Encode16fPtr)(const uint16_t* src, float scale, float min, size_t size, int32_t& sum, int32_t& sqsum, uint8_t* dst);
             typedef void (*Decode32fPtr)(const uint8_t * src, float scale, float shift, size_t size, float* dst);
             typedef void (*Decode16fPtr)(const uint8_t* src, float scale, float shift, size_t size, uint16_t* dst);
             typedef void (*CosineDistancePtr)(const uint8_t* a, const uint8_t* b, size_t size, float* distance);
+
+        protected:
+            typedef void (*MinMax32fPtr)(const float* src, size_t size, float &min, float &max);
+            typedef void (*MinMax16fPtr)(const uint16_t* src, size_t size, float& min, float& max);
 
             MinMax32fPtr _minMax32f;
             MinMax16fPtr _minMax16f;
@@ -89,12 +90,39 @@ namespace Simd
             virtual void CosineDistancesMxNa(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances) const;
             virtual void CosineDistancesMxNp(size_t M, size_t N, const uint8_t* A, const uint8_t* B, float* distances) const;
 
-        protected:
-            typedef void (*MacroCosineDistancesPtr)(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, size_t size, float* distances, size_t stride);
+            typedef void (*MacroCosineDistancesDirectPtr)(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, size_t size, float* distances, size_t stride);
+            typedef void (*UnpackDataPtr)(size_t count, const uint8_t* const* src, size_t size, uint8_t* dst, size_t stride);
+            typedef void (*MacroCosineDistancesUnpackPtr)(size_t M, size_t N, size_t K, const uint8_t* ad, const float * an, const uint8_t* bd, const float* bn, float* distances, size_t stride);
 
-            MacroCosineDistancesPtr _macroCosineDistances;
-            size_t _microM, _microN;
+        protected:
+            typedef void (*UnpackNormPtr)(size_t count, const uint8_t* const* src, float* dst, size_t stride);
+
+            void CosineDistancesDirect(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances) const;
+
+            MacroCosineDistancesDirectPtr _macroCosineDistancesDirect;
+            size_t _microMd, _microNd;
+
+            void CosineDistancesUnpack(size_t M, size_t N, const uint8_t* const* A, const uint8_t* const* B, float* distances) const;
+
+            UnpackNormPtr _unpackNormA, _unpackNormB;
+            UnpackDataPtr _unpackDataA, _unpackDataB;
+            MacroCosineDistancesUnpackPtr _macroCosineDistancesUnpack;
+            size_t _microMu, _microNu, _unpSize;
         };
+
+        //-------------------------------------------------------------------------------------------------
+
+        Base::DescrInt::Encode32fPtr GetEncode32f(size_t depth);
+        Base::DescrInt::Encode16fPtr GetEncode16f(size_t depth);
+
+        Base::DescrInt::Decode32fPtr GetDecode32f(size_t depth);
+        Base::DescrInt::Decode16fPtr GetDecode16f(size_t depth);
+
+        Base::DescrInt::CosineDistancePtr GetCosineDistance(size_t depth);
+        Sse41::DescrInt::MacroCosineDistancesDirectPtr GetMacroCosineDistancesDirect(size_t depth);
+
+        Sse41::DescrInt::UnpackDataPtr GetUnpackData(size_t depth, bool transpose);
+        Sse41::DescrInt::MacroCosineDistancesUnpackPtr GetMacroCosineDistancesUnpack(size_t depth);
 
         //-------------------------------------------------------------------------------------------------
 
@@ -113,6 +141,20 @@ namespace Simd
 
         //-------------------------------------------------------------------------------------------------
 
+        Base::DescrInt::Encode32fPtr GetEncode32f(size_t depth);
+        Base::DescrInt::Encode16fPtr GetEncode16f(size_t depth);
+
+        Base::DescrInt::Decode32fPtr GetDecode32f(size_t depth);
+        Base::DescrInt::Decode16fPtr GetDecode16f(size_t depth);
+
+        Base::DescrInt::CosineDistancePtr GetCosineDistance(size_t depth);
+        Sse41::DescrInt::MacroCosineDistancesDirectPtr GetMacroCosineDistancesDirect(size_t depth);
+
+        Sse41::DescrInt::UnpackDataPtr GetUnpackData(size_t depth, bool transpose);
+        Sse41::DescrInt::MacroCosineDistancesUnpackPtr GetMacroCosineDistancesUnpack(size_t depth);
+
+        //-------------------------------------------------------------------------------------------------
+
         void* DescrIntInit(size_t size, size_t depth);
     }
 #endif
@@ -125,6 +167,39 @@ namespace Simd
         public:
             DescrInt(size_t size, size_t depth);
         };
+
+        //-------------------------------------------------------------------------------------------------
+
+        Base::DescrInt::Encode32fPtr GetEncode32f(size_t depth);
+        Base::DescrInt::Encode16fPtr GetEncode16f(size_t depth);
+
+        Base::DescrInt::Decode32fPtr GetDecode32f(size_t depth);
+        Base::DescrInt::Decode16fPtr GetDecode16f(size_t depth);
+
+        Base::DescrInt::CosineDistancePtr GetCosineDistance(size_t depth);
+        Sse41::DescrInt::MacroCosineDistancesDirectPtr GetMacroCosineDistancesDirect(size_t depth);
+
+        Sse41::DescrInt::UnpackDataPtr GetUnpackData(size_t depth, bool transpose);
+        Sse41::DescrInt::MacroCosineDistancesUnpackPtr GetMacroCosineDistancesUnpack(size_t depth);
+
+        //-------------------------------------------------------------------------------------------------
+
+        void* DescrIntInit(size_t size, size_t depth);
+    }
+#endif
+
+#ifdef SIMD_AVX512VNNI_ENABLE
+    namespace Avx512vnni
+    {
+        class DescrInt : public Avx512bw::DescrInt
+        {
+        public:
+            DescrInt(size_t size, size_t depth);
+        };
+
+        //-------------------------------------------------------------------------------------------------
+
+        Sse41::DescrInt::MacroCosineDistancesUnpackPtr GetMacroCosineDistancesUnpack(size_t depth);
 
         //-------------------------------------------------------------------------------------------------
 
